@@ -105,7 +105,7 @@ const collections = {
 }
 
 const items = {
-  all: (size = 20) => request.get<Items>(`/api/core/items?${size}`),
+  all: (size = 20) => request.get<Items>(`/api/core/items?size=${size}`),
   byId: (itemId: string) => request.get<Item>(`/api/core/items/${itemId}`),
   update: (itemId: string, payload: {}) => request.patch<Item>(`/api/core/items/${itemId}`, payload),
   move: (itemId: string, targetColId: string) => request
