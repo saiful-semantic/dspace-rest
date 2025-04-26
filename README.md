@@ -1,9 +1,12 @@
-# DSpace Node
+# DSpace REST API Client
+
 ![main](https://github.com/semanticlib/dspace-rest/actions/workflows/node.js.yml/badge.svg)
 [![NPM version](https://img.shields.io/npm/v/dspace-rest.svg)](https://npmjs.org/package/dspace-rest)
 [![NPM downloads](https://img.shields.io/npm/dm/dspace-rest.svg)](https://npmjs.org/package/dspace-rest)
 
 NodeJs client for DSpace 7+ [REST API](https://github.com/DSpace/RestContract)
+
+### Note: Successor of [dspace7-node](https://github.com/semanticlib/dspace7-node)
 
 ## Installation
 
