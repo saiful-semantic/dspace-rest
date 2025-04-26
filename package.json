@@ -1,0 +1,43 @@
+{
+  "name": "dspace-rest",
+  "version": "0.0.1",
+  "description": "DSpace REST API Client for Node.js",
+  "repository": "https://github.com/semanticlib/dspace-rest",
+  "license": "MIT",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --dts --format esm,cjs --outDir dist",
+    "test": "mocha --recursive --require ts-node/register"
+  },
+  "dependencies": {
+    "axios": "1.9.0"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22.15.2",
+    "mocha": "^11.1.0",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "tsup": "^8.4.0",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "DSpace",
+    "REST",
+    "DSpace7",
+    "DSpace8",
+    "DSpace9",
+    "Node"
+  ]
+}
