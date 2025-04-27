@@ -7,20 +7,27 @@
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "dspace-cli": "./bin/cli.js"
+  },
   "files": [
-    "dist"
+    "dist",
+    "bin"
   ],
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
-    "build": "tsup src/index.ts --dts --format esm,cjs --outDir dist",
+    "build": "tsup src/index.ts src/cli/index.ts --dts --format esm,cjs --outDir dist",
     "test": "mocha --recursive --require ts-node/register"
   },
   "dependencies": {
-    "axios": "1.9.0"
+    "axios": "1.9.0",
+    "commander": "^13.1.0",
+    "configstore": "^7.0.0"
   },
   "devDependencies": {
+    "@types/configstore": "^6.0.2",
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.15.2",
     "@types/sinon": "^17.0.4",
