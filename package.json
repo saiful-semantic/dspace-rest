@@ -4,11 +4,11 @@
   "description": "DSpace REST API Client for Node.js",
   "repository": "https://github.com/semanticlib/dspace-rest",
   "license": "MIT",
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "bin": {
-    "dspace-cli": "./bin/cli.js"
+    "dspace-cli": "./dist/cli/index.js"
   },
   "files": [
     "dist",
