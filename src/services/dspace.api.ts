@@ -4,6 +4,7 @@ import {
   Communities, SubCommunities, Collection, Collections,
   Item, Items, Bundle, Bundles, Bitstream, Bitstreams
 } from './dspace.types'
+import { LOGIN_RESULT } from '../constants'
 
 // Based on this GIST example:
 // https://gist.github.com/JaysonChiang/fa704307bacffe0f17d51acf6b1292fc
@@ -60,11 +61,6 @@ const request = {
     }).then(responseBody),
   delete: <T>(url: string) => axios.delete<T>(url).then(responseBody)
 }
-
-const LOGIN_RESULT = {
-  SUCCESS: 'login success',
-  FAILURE: 'login failure'
-} as const;
 
 const auth = {
   login: async (user: string, password: string) => {
