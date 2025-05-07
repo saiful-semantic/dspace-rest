@@ -68,72 +68,42 @@ const LOGIN_RESULT = {
 
 const auth = {
   login: async (user: string, password: string) => {
-    try {
-      // === Try DSpace 8.x (Spring Security 6 CSRF, baseURL = /server) ===
-      try {
-        const csrfRes = await axios.get('/api/security/csrf', {
+    const tryLogin = async (csrfUrl: string, versionLabel: string) => {
+      const csrfRes = await axios.get(csrfUrl, { withCredentials: true })
+      const csrfToken = csrfRes.headers['dspace-xsrf-token']
+      if (!csrfToken) throw new Error(`Missing CSRF token (${versionLabel})`)
+
+      const loginRes = await axios.post(
+        '/api/authn/login',
+        qs.stringify({ user, password }),
+        {
+          headers: {
+            'x-xsrf-token': csrfToken,
+            'Content-Type': 'application/x-www-form-urlencoded',
+            Cookie: `DSPACE-XSRF-COOKIE=${csrfToken}`
+          },
           withCredentials: true
-        })
-        
-        // Parse the `set-cookie` response header
-        const setCookieHeader = csrfRes.headers['set-cookie'] || csrfRes.headers['Set-Cookie']
-        const csrfToken = csrfRes.headers['dspace-xsrf-token']
-        
-        if (!setCookieHeader || !csrfToken)
-          throw new Error('Missing CSRF token or cookie (DSpace 8.x)')
-        
-        // Send the login request with both the header and cookie
-        const loginRes = await axios.post(
-          '/api/authn/login',
-          qs.stringify({ user, password }),
-          {
-            headers: {
-              'x-xsrf-token': csrfToken,
-              Cookie: `DSPACE-XSRF-COOKIE=${csrfToken}`,
-              'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            withCredentials: true
-          }
-        )
+        }
+      )
 
-        axios.defaults.headers.common['Authorization'] = loginRes.headers.authorization
-        axios.defaults.headers.common['x-xsrf-token'] = csrfToken
+      axios.defaults.headers.common['Authorization'] = loginRes.headers.authorization
+      axios.defaults.headers.common['x-xsrf-token'] = csrfToken
 
-        console.log(`Login success (DSpace 8.x) with user: ${user}`)
-        return LOGIN_RESULT.SUCCESS
+      console.log(`Login success (${versionLabel}) with user: ${user}`)
+      return LOGIN_RESULT.SUCCESS
+    }
+
+    try {
+      try {
+        return await tryLogin('/api/security/csrf', 'DSpace 8+')
       } catch (e8: any) {
-        console.dir(e8)
-        console.warn('DSpace 8.x login failed, trying 7.x...', e8.message)
+        console.warn('DSpace 8+ login failed, trying 7...', e8.message)
       }
 
-      // === Fallback: Try DSpace 7.x (Legacy CSRF) ===
       try {
-        // 1. Get CSRF token from /api/authn/status
-        const statusRes = await axios.get('/api/authn/status')
-        const csrfToken = statusRes.headers['dspace-xsrf-token']
-        if (!csrfToken) throw new Error('No CSRF token received (DSpace 7.x)')
-
-        // 2. Send login request with CSRF token
-        const loginRes = await axios.post(
-          '/api/authn/login',
-          qs.stringify({ user, password }),
-          {
-            headers: {
-              'x-xsrf-token': csrfToken,
-              'Content-Type': 'application/x-www-form-urlencoded',
-              Cookie: `DSPACE-XSRF-COOKIE=${csrfToken}`
-            }
-          }
-        )
-
-        // 3. Set auth headers for future requests
-        axios.defaults.headers.common['Authorization'] = loginRes.headers.authorization
-        axios.defaults.headers.common['x-xsrf-token'] = csrfToken
-
-        console.log(`Login success (DSpace 7.x) with user: ${user}`)
-        return LOGIN_RESULT.SUCCESS
+        return await tryLogin('/api/authn/status', 'DSpace 7')
       } catch (e7: any) {
-        console.error('Login failed for both DSpace 8.x and 7.x:', e7.message)
+        console.error('Login failed for both DSpace 8+ and 7:', e7.message)
         return LOGIN_RESULT.FAILURE
       }
     } catch (error) {
