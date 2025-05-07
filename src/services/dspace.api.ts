@@ -4,6 +4,7 @@ import {
   Communities, SubCommunities, Collection, Collections,
   Item, Items, Bundle, Bundles, Bitstream, Bitstreams
 } from './dspace.types'
+import { LOGIN_RESULT } from '../constants'
 
 // Based on this GIST example:
 // https://gist.github.com/JaysonChiang/fa704307bacffe0f17d51acf6b1292fc
@@ -27,11 +28,11 @@ axios.interceptors.response.use(
         break
 
       case 404:
-        console.error('/not-found')
+        console.error('not-found')
         break
 
       case 500:
-        console.error('/server-error')
+        console.error('server-error')
         break
     }
     return Promise.reject(error)
@@ -63,25 +64,47 @@ const request = {
 
 const auth = {
   login: async (user: string, password: string) => {
-    try {
-      const loginRes = await axios.get('/api/authn/status')
-      const csrf = loginRes.headers['dspace-xsrf-token']
-      const res = await axios.post('/api/authn/login',
-        qs.stringify({user, password}), {
+    const tryLogin = async (csrfUrl: string, versionLabel: string) => {
+      const csrfRes = await axios.get(csrfUrl, { withCredentials: true })
+      const csrfToken = csrfRes.headers['dspace-xsrf-token']
+      if (!csrfToken) throw new Error(`Missing CSRF token (${versionLabel})`)
+
+      const loginRes = await axios.post(
+        '/api/authn/login',
+        qs.stringify({ user, password }),
+        {
           headers: {
-            'x-xsrf-token': csrf,
-            Cookie: `DSPACE-XSRF-COOKIE=${csrf}`,
-            'Content-Type': 'application/x-www-form-urlencoded'
-          }
-        })
-      axios.defaults.headers.Authorization = res.headers.authorization
-      axios.defaults.headers.Cookie = `DSPACE-XSRF-COOKIE=${csrf}`
-      axios.defaults.headers['x-xsrf-token'] = csrf
-      console.log(`Log-in success with user: ${user}`)
-      return 'login success'
-    } catch (e: any) {
-      console.log(`Login failed: ${e.errorCode}`)
-      return 'login failure'
+            'x-xsrf-token': csrfToken,
+            'Content-Type': 'application/x-www-form-urlencoded',
+            Cookie: `DSPACE-XSRF-COOKIE=${csrfToken}`
+          },
+          withCredentials: true
+        }
+      )
+
+      axios.defaults.headers.common['Authorization'] = loginRes.headers.authorization
+      axios.defaults.headers.common['x-xsrf-token'] = csrfToken
+
+      console.log(`Login success (${versionLabel}) with user: ${user}`)
+      return LOGIN_RESULT.SUCCESS
+    }
+
+    try {
+      try {
+        return await tryLogin('/api/security/csrf', 'DSpace 8+')
+      } catch (e8: any) {
+        console.warn('DSpace 8+ login failed, trying 7...', e8.message)
+      }
+
+      try {
+        return await tryLogin('/api/authn/status', 'DSpace 7')
+      } catch (e7: any) {
+        console.error('Login failed for both DSpace 8+ and 7:', e7.message)
+        return LOGIN_RESULT.FAILURE
+      }
+    } catch (error) {
+      console.error('Unexpected error during login:', error)
+      return LOGIN_RESULT.FAILURE
     }
   }
 }
