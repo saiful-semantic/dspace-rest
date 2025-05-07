@@ -84,35 +84,63 @@ async function main() {
 main()
 ```
 
-## TypeScript Support
+## CLI Usage
 
-The library includes TypeScript definitions. Key types:
+The package provides a command-line interface (CLI) for interacting with DSpace servers directly from your terminal.
 
-```typescript
-interface DspaceEntity {
-  id: string
-  uuid: string
-  name: string
-  handle: string
-  metadata: {
-    [key: string]: [{
-      value: string | number | Date
-      language: string
-      authority: string
-      confidence: number
-      place: number
-    }]
-  }
-}
+### Setup
 
-interface Item extends DspaceEntity {
-  type: 'item'
-  inArchive: boolean
-  discoverable: boolean
-  withdrawn: boolean
-  lastModified: Date
-}
+After installing the package globally or as a project dependency, the CLI is available as `dspace-cli`:
+
+```bash
+npx dspace-cli --help
+# or if installed globally
+# dspace-cli --help
 ```
+
+### Configuration
+
+Before using most commands, set your DSpace server URL and login credentials:
+
+```bash
+dspace-cli config:set baseURL https://demo.dspace.org/server
+dspace-cli login -u admin@example.com -p password
+```
+
+### Common Commands
+
+- List all items:
+  ```bash
+  dspace-cli items:list
+  ```
+- Show item details:
+  ```bash
+  dspace-cli items:show <itemId>
+  ```
+- Update item metadata:
+  ```bash
+  dspace-cli items:update <itemId> '[{"op":"add","path":"/metadata/dc.title","value":[{"value":"New Title"}]}]'
+  ```
+- List all collections:
+  ```bash
+  dspace-cli collections:list
+  ```
+- Add a bitstream to an item:
+  ```bash
+  dspace-cli bitstreams:add <itemId> <filename> <filePath>
+  ```
+- Delete a bitstream:
+  ```bash
+  dspace-cli bitstreams:delete <bitstreamId>
+  ```
+- Move an item to another collection:
+  ```bash
+  dspace-cli items:move <itemId> <collectionId>
+  ```
+
+### More
+
+Run `dspace-cli --help` or any subcommand with `--help` for a full list of available commands and options.
 
 ## Features
 
@@ -139,7 +167,7 @@ interface Item extends DspaceEntity {
 ### Running Tests
 
 ```bash
-npm test
+npm run test
 ```
 
 Tests cover all major functionality including:
