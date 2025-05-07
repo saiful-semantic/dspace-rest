@@ -90,13 +90,25 @@ The package provides a command-line interface (CLI) for interacting with DSpace 
 
 ### Setup
 
-After installing the package globally or as a project dependency, the CLI is available as `dspace-cli`:
+The CLI is available as `dspace-cli`. You can run it in a few ways:
 
-```bash
-npx dspace-cli --help
-# or if installed globally
-# dspace-cli --help
-```
+1.  **Using `npx` without prior installation (recommended for quick use or one-off commands):**
+    This command will temporarily download the `dspace-rest` package (if not already cached) and then execute `dspace-cli`.
+    ```bash
+    npx -p dspace-rest dspace-cli --help
+    ```
+
+2.  **If `dspace-rest` is a dependency in your project:**
+    After running `npm install dspace-rest` or `yarn add dspace-rest` in your project:
+    ```bash
+    npx dspace-cli --help
+    ```
+
+3.  **If `dspace-rest` is installed globally:**
+    After running `npm install -g dspace-rest`:
+    ```bash
+    dspace-cli --help
+    ```
 
 ### Configuration
 
