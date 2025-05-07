@@ -27,11 +27,11 @@ axios.interceptors.response.use(
         break
 
       case 404:
-        console.error('/not-found')
+        console.error('not-found')
         break
 
       case 500:
-        console.error('/server-error')
+        console.error('server-error')
         break
     }
     return Promise.reject(error)
@@ -61,27 +61,84 @@ const request = {
   delete: <T>(url: string) => axios.delete<T>(url).then(responseBody)
 }
 
+const LOGIN_RESULT = {
+  SUCCESS: 'login success',
+  FAILURE: 'login failure'
+} as const;
+
 const auth = {
   login: async (user: string, password: string) => {
     try {
-      const loginRes = await axios.get('/api/authn/status')
-      const csrf = loginRes.headers['dspace-xsrf-token']
-      const res = await axios.post('/api/authn/login',
-        qs.stringify({user, password}), {
-          headers: {
-            'x-xsrf-token': csrf,
-            Cookie: `DSPACE-XSRF-COOKIE=${csrf}`,
-            'Content-Type': 'application/x-www-form-urlencoded'
-          }
+      // === Try DSpace 8.x (Spring Security 6 CSRF, baseURL = /server) ===
+      try {
+        const csrfRes = await axios.get('/api/security/csrf', {
+          withCredentials: true
         })
-      axios.defaults.headers.Authorization = res.headers.authorization
-      axios.defaults.headers.Cookie = `DSPACE-XSRF-COOKIE=${csrf}`
-      axios.defaults.headers['x-xsrf-token'] = csrf
-      console.log(`Log-in success with user: ${user}`)
-      return 'login success'
-    } catch (e: any) {
-      console.log(`Login failed: ${e.errorCode}`)
-      return 'login failure'
+        
+        // Parse the `set-cookie` response header
+        const setCookieHeader = csrfRes.headers['set-cookie'] || csrfRes.headers['Set-Cookie']
+        const csrfToken = csrfRes.headers['dspace-xsrf-token']
+        
+        if (!setCookieHeader || !csrfToken)
+          throw new Error('Missing CSRF token or cookie (DSpace 8.x)')
+        
+        // Send the login request with both the header and cookie
+        const loginRes = await axios.post(
+          '/api/authn/login',
+          qs.stringify({ user, password }),
+          {
+            headers: {
+              'x-xsrf-token': csrfToken,
+              Cookie: `DSPACE-XSRF-COOKIE=${csrfToken}`,
+              'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            withCredentials: true
+          }
+        )
+
+        axios.defaults.headers.common['Authorization'] = loginRes.headers.authorization
+        axios.defaults.headers.common['x-xsrf-token'] = csrfToken
+
+        console.log(`Login success (DSpace 8.x) with user: ${user}`)
+        return LOGIN_RESULT.SUCCESS
+      } catch (e8: any) {
+        console.dir(e8)
+        console.warn('DSpace 8.x login failed, trying 7.x...', e8.message)
+      }
+
+      // === Fallback: Try DSpace 7.x (Legacy CSRF) ===
+      try {
+        // 1. Get CSRF token from /api/authn/status
+        const statusRes = await axios.get('/api/authn/status')
+        const csrfToken = statusRes.headers['dspace-xsrf-token']
+        if (!csrfToken) throw new Error('No CSRF token received (DSpace 7.x)')
+
+        // 2. Send login request with CSRF token
+        const loginRes = await axios.post(
+          '/api/authn/login',
+          qs.stringify({ user, password }),
+          {
+            headers: {
+              'x-xsrf-token': csrfToken,
+              'Content-Type': 'application/x-www-form-urlencoded',
+              Cookie: `DSPACE-XSRF-COOKIE=${csrfToken}`
+            }
+          }
+        )
+
+        // 3. Set auth headers for future requests
+        axios.defaults.headers.common['Authorization'] = loginRes.headers.authorization
+        axios.defaults.headers.common['x-xsrf-token'] = csrfToken
+
+        console.log(`Login success (DSpace 7.x) with user: ${user}`)
+        return LOGIN_RESULT.SUCCESS
+      } catch (e7: any) {
+        console.error('Login failed for both DSpace 8.x and 7.x:', e7.message)
+        return LOGIN_RESULT.FAILURE
+      }
+    } catch (error) {
+      console.error('Unexpected error during login:', error)
+      return LOGIN_RESULT.FAILURE
     }
   }
 }
