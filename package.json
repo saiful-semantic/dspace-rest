@@ -1,6 +1,6 @@
 {
   "name": "dspace-rest",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "DSpace REST API Client for Node.js",
   "repository": "https://github.com/semanticlib/dspace-rest",
   "license": "MIT",
