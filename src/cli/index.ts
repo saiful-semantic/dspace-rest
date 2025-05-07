@@ -4,7 +4,7 @@ import ConfigStore from 'configstore'
 import fs from 'fs'
 import path from 'path'
 import os from 'os'
-import { init, login, showAllItems, showItem, updateItem, showItemBundles, showBitstreams, newBitstream, deleteBitstreams, moveItem, showCollections } from '../index'
+import * as DSpaceClient from '../index'
 
 
 // Configuration Setup
@@ -76,8 +76,8 @@ program
     const password = options.password || (await prompt('Password: ', true))
 
     try {
-      init(config.baseURL as string)
-      await login(username, password)
+      DSpaceClient.init(config.baseURL as string)
+      await DSpaceClient.login(username, password)
       authStore.set('credentials', { username, password })
       console.log('✅ Login successful! Credentials stored securely.')
     } catch (e: unknown) {
@@ -91,7 +91,7 @@ program
   .description('List all items')
   .action(async () => {
     await ensureAuth()
-    await showAllItems()
+    await DSpaceClient.showAllItems()
   })
 
 program
@@ -99,7 +99,7 @@ program
   .description('Show item details')
   .action(async (id: string) => {
     await ensureAuth()
-    await showItem(id)
+    await DSpaceClient.showItem(id)
   })
 
 program
@@ -108,7 +108,7 @@ program
   .action(async (id: string, metadataJson: string) => {
     await ensureAuth()
     const payload = JSON.parse(metadataJson)
-    await updateItem(id, payload)
+    await DSpaceClient.updateItem(id, payload)
   })
 
 // Bitstream Commands
@@ -117,7 +117,7 @@ program
   .description('List bitstreams for an item')
   .action(async (itemId: string, type?: string) => {
     await ensureAuth()
-    await showItemBundles(itemId, type)
+    await DSpaceClient.showItemBundles(itemId, type)
   })
 
 program
@@ -125,7 +125,7 @@ program
   .description('Add a new bitstream to an item')
   .action(async (itemId: string, name: string, filePath: string) => {
     await ensureAuth()
-    await newBitstream(itemId, name, filePath)
+    await DSpaceClient.newBitstream(itemId, name, filePath)
   })
 
 program
@@ -133,7 +133,7 @@ program
   .description('Delete a bitstream')
   .action(async (id: string) => {
     await ensureAuth()
-    await deleteBitstreams(id)
+    await DSpaceClient.deleteBitstreams(id)
   })
 
 // Collection Commands
@@ -142,7 +142,7 @@ program
   .description('List all collections')
   .action(async () => {
     await ensureAuth()
-    await showCollections()
+    await DSpaceClient.showCollections()
   })
 
 program
@@ -150,7 +150,7 @@ program
   .description('Move item to another collection')
   .action(async (itemId: string, collectionId: string) => {
     await ensureAuth()
-    await moveItem(itemId, collectionId)
+    await DSpaceClient.moveItem(itemId, collectionId)
   })
 
 // Helper Functions
@@ -161,7 +161,7 @@ async function ensureAuth() {
     process.exit(1)
   }
 
-  init(config.baseURL as string)
+  DSpaceClient.init(config.baseURL as string)
 
   try {
     const credentials = authStore.get('credentials')
@@ -169,7 +169,7 @@ async function ensureAuth() {
       console.error('Error: No saved credentials. Run "dspace-cli login" first.')
       process.exit(1)
     }
-    await login(credentials[0].account, credentials[0].password)
+    await DSpaceClient.login(credentials.username, credentials.password)
   } catch (e: unknown) {
     console.error('Authentication error:', e instanceof Error ? e.message : String(e))
     process.exit(1)
