@@ -2,6 +2,7 @@ import { equal, deepEqual } from 'assert'
 import sinon from 'sinon'
 import axios from 'axios'
 import dspaceApi from './dspace.api'
+import { LOGIN_RESULT } from '../constants'
 
 describe('DSpace API Tests', () => {
   const baseUrl = 'https://demo.dspace.org/server'
@@ -31,21 +32,34 @@ describe('DSpace API Tests', () => {
   })
 
   describe('Auth', () => {
-    it('should handle successful login', async () => {
-      const mockLoginRes = { headers: { 'dspace-xsrf-token': 'test-token' } }
-      const mockAuthRes = { headers: { authorization: 'Bearer test' } }
+    afterEach(() => sinon.restore())
+  
+    it('should handle successful 8+ login', async () => {
+      sinon.stub(axios, 'get')
+        .withArgs('/api/security/csrf').resolves({ headers: { 'dspace-xsrf-token': 'csrf-token' } })
       
-      sinon.stub(axios, 'get').resolves(mockLoginRes)
-      sinon.stub(axios, 'post').resolves(mockAuthRes)
-
+      sinon.stub(axios, 'post')
+        .withArgs('/api/authn/login').resolves({ headers: { authorization: 'Bearer test' } })
+  
       const result = await dspaceApi.auth.login('testuser', 'password')
-      equal(result, 'login success')
+      equal(result, LOGIN_RESULT.SUCCESS)
     })
-
-    it('should handle failed login', async () => {
-      sinon.stub(axios, 'get').rejects(new Error('Auth failed'))
+  
+    it('should fallback to 7x login on 8+ failure', async () => {
+      const getStub = sinon.stub(axios, 'get')
+      getStub.withArgs('/api/security/csrf').rejects(new Error('CSRF not found'))
+      getStub.withArgs('/api/authn/status').resolves({ headers: { 'dspace-xsrf-token': 'csrf-token' } })
+  
+      sinon.stub(axios, 'post').resolves({ headers: { authorization: 'Bearer test' } })
+  
+      const result = await dspaceApi.auth.login('testuser', 'password')
+      equal(result, LOGIN_RESULT.SUCCESS)
+    })
+  
+    it('should handle total login failure', async () => {
+      sinon.stub(axios, 'get').rejects(new Error('No auth'))
       const result = await dspaceApi.auth.login('wronguser', 'wrongpass')
-      equal(result, 'login failure')
+      equal(result, LOGIN_RESULT.FAILURE)
     })
   })
 
