@@ -1,5 +1,5 @@
 import dspaceApi from './services/dspace.api'
-import Metadata from './utils/metadata'
+import Payload from './utils/payload'
 import {readFileSync} from 'fs'
 
 export function init (url: string, agent: string = 'DSpace NodeJs Client') {
@@ -85,7 +85,7 @@ export async function newBitstream(itemId: string, name: string, filePath: strin
     if (bundleId.length) {
       const formData = new FormData()
       const contents = new Blob([readFileSync(`${filePath}/${name}`)])
-      const properties = `${JSON.stringify(Metadata.newBitstream(name))};type=application/json`
+      const properties = `${JSON.stringify(Payload.Bitstream(name))};type=application/json`
       formData.append('file', contents, name)
       formData.append('properties', properties)
       // console.log(contents, properties)
@@ -183,7 +183,7 @@ export async function deleteCollection(colId: string) {
 
 export async function createCollection(comId: string, name: string) {
   try {
-    await dspaceApi.collections.create(comId, Metadata.newCollection(name))
+    await dspaceApi.collections.create(comId, Payload.Collection(name))
     console.log(`Collection created: ${name}`)
   } catch (e: any) {
     console.error(`Create collection failed: ${e.errorCode}`)
