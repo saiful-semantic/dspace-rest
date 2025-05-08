@@ -1,5 +1,5 @@
-class Metadata {
-  static newCollection(name: string) {
+class Payload {
+  static Collection(name: string) {
     return {
       name,
       metadata: {
@@ -15,7 +15,7 @@ class Metadata {
     }
   }
 
-  static newBitstream(name: string, place = 0, filename?: string) {
+  static Bitstream(name: string, place = 0, filename?: string) {
     return {
       name,
       metadata: {
@@ -34,4 +34,4 @@ class Metadata {
   }
 }
 
-export default Metadata
+export default Payload

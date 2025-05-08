@@ -1,13 +1,21 @@
 import dspaceApi from './services/dspace.api'
-import Metadata from './utils/metadata'
+import Payload from './utils/payload'
 import {readFileSync} from 'fs'
 
 export function init (url: string, agent: string = 'DSpace NodeJs Client') {
   dspaceApi.init(url, agent)
 }
 
+export function info () {
+  return dspaceApi.core.info()
+}
+
 export function login (user: string, password: string) {
   return dspaceApi.auth.login(user, password)
+}
+
+export function logout () {
+  return dspaceApi.auth.logout()
 }
 
 export async function showAllItems() {
@@ -85,7 +93,7 @@ export async function newBitstream(itemId: string, name: string, filePath: strin
     if (bundleId.length) {
       const formData = new FormData()
       const contents = new Blob([readFileSync(`${filePath}/${name}`)])
-      const properties = `${JSON.stringify(Metadata.newBitstream(name))};type=application/json`
+      const properties = `${JSON.stringify(Payload.Bitstream(name))};type=application/json`
       formData.append('file', contents, name)
       formData.append('properties', properties)
       // console.log(contents, properties)
@@ -116,7 +124,7 @@ export async function newBitstream(itemId: string, name: string, filePath: strin
 
 export async function deleteBitstreams(bitstreamId: string) {
   try {
-    await dspaceApi.bitstreams.delete(bitstreamId)
+    await dspaceApi.bitstreams.deleteById(bitstreamId)
     console.log(`Bitstream deleted: ${bitstreamId}`)
   } catch (e: any) {
     console.error(`Delete bitstream (id: ${bitstreamId} failed: ${e.errorCode}`)
@@ -126,7 +134,7 @@ export async function deleteBitstreams(bitstreamId: string) {
 
 export async function deleteBitstreamsMulti(payload: any) {
   try {
-    await dspaceApi.bitstreams.multiDelete(payload)
+    await dspaceApi.bitstreams.batchUpdate(payload)
   } catch (e: any) {
     console.error(`Delete bitstream failed: ${e.errorCode}`)
     process.env.DEBUG && console.dir(e)
@@ -144,7 +152,7 @@ export async function deleteBitstreamsByItemId(itemId: string) {
         const bitstreams = res._embedded.bitstreams
         for (const bitstream of bitstreams) {
           try {
-            await dspaceApi.bitstreams.delete(bitstream.uuid)
+            await dspaceApi.bitstreams.deleteById(bitstream.uuid)
             console.log(`Bitstream (bundle: ${bundle.name}) deleted: ${bitstream.name}`)
           } catch {
             console.log(`Delete bitstream (bundle: ${bundle.name}) failed for: ${bitstream.name}`)
@@ -183,7 +191,7 @@ export async function deleteCollection(colId: string) {
 
 export async function createCollection(comId: string, name: string) {
   try {
-    await dspaceApi.collections.create(comId, Metadata.newCollection(name))
+    await dspaceApi.collections.create(comId, Payload.Collection(name))
     console.log(`Collection created: ${name}`)
   } catch (e: any) {
     console.error(`Create collection failed: ${e.errorCode}`)
