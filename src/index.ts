@@ -6,8 +6,16 @@ export function init (url: string, agent: string = 'DSpace NodeJs Client') {
   dspaceApi.init(url, agent)
 }
 
+export function info () {
+  return dspaceApi.core.info()
+}
+
 export function login (user: string, password: string) {
   return dspaceApi.auth.login(user, password)
+}
+
+export function logout () {
+  return dspaceApi.auth.logout()
 }
 
 export async function showAllItems() {

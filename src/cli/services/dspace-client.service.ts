@@ -4,7 +4,9 @@ import { authStore } from '../utils/store'
 
 export const dspaceClient = {
   init: DSpaceClient.init,
+  info: DSpaceClient.info,
   login: DSpaceClient.login,
+  logout: DSpaceClient.logout,
   showAllItems: DSpaceClient.showAllItems,
   showItem: DSpaceClient.showItem,
   updateItem: DSpaceClient.updateItem,
