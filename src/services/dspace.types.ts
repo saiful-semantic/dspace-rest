@@ -1,3 +1,11 @@
+export interface ApiInfo {
+  dspaceUI: string,
+  dspaceName: string,
+  dspaceServer: string,
+  dspaceVersion : string,
+  type: string
+}
+
 export interface DspaceEntity {
   id: string
   uuid: string

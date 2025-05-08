@@ -5,6 +5,7 @@ const AUTHN_PREFIX = `${API_PREFIX}/authn`
 const SECURITY_PREFIX = `${API_PREFIX}/security`
 
 export const ENDPOINTS = {
+  BASE: API_PREFIX,
   CSRF_DSPACE8: `${SECURITY_PREFIX}/csrf`,
   CSRF_DSPACE7: `${AUTHN_PREFIX}/status`, // DSpace 7 uses /status to get initial CSRF
   LOGIN: `${AUTHN_PREFIX}/login`,

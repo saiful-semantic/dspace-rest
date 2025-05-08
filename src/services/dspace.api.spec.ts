@@ -31,6 +31,38 @@ describe('DSpace API Tests', () => {
     })
   })
 
+  describe('Core API', () => {
+    it('should retrieve API info correctly', async () => {
+      const mockApiInfo = {
+        dspaceUI: 'http://test-dspace.com',
+        dspaceName: 'Test DSpace',
+        dspaceServer: 'http://test-dspace.com/server',
+        dspaceVersion: 'DSpace 7.6',
+        type: 'root'
+      }
+      const getStub = sinon.stub(client, 'get')
+        .resolves({ data: mockApiInfo } as any) 
+
+      const result = await dspaceApi.core.info()
+      equal(result.dspaceVersion, mockApiInfo.dspaceVersion)
+      equal(result.dspaceName, mockApiInfo.dspaceName)
+      sinon.assert.calledWith(getStub, '/api')
+    })
+
+    it('should handle API info errors', async () => {
+      sinon.stub(client, 'get').rejects(new DSpaceApiError('Network error', 500))
+      
+      try {
+        await dspaceApi.core.info()
+        ok(false, 'Expected error to be thrown')
+      } catch (error) {
+        ok(error instanceof DSpaceApiError, 'Error should be an instance of DSpaceApiError')
+        equal(error.message, 'Network error')
+      }
+    })
+  })
+
+
   describe('Auth', () => {
     it('should handle successful DSpace 8+ login and set auth headers', async () => {
       const getStub = sinon.stub(client, 'get')
@@ -127,7 +159,7 @@ describe('DSpace API Tests', () => {
 
   describe('Communities', () => {
     it('should get all communities with default pagination', async () => {
-      const mockCommunities = { _embedded: { communities: [] } } // DSpace often uses _embedded
+      const mockCommunities = { _embedded: { communities: [] } }
       const getStub = sinon.stub(client, 'get').resolves({ data: mockCommunities } as any)
       
       const result = await dspaceApi.communities.all() // Uses size=20, page=0 by default

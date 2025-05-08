@@ -2,7 +2,7 @@ import axios, { AxiosError, AxiosResponse, AxiosInstance, InternalAxiosRequestCo
 import qs from 'node:querystring'
 import {
   Communities, SubCommunities, Collection, Collections, Community,
-  Item, Items, Bundle, Bundles, Bitstream, Bitstreams
+  Item, Items, Bundle, Bundles, Bitstream, Bitstreams, ApiInfo
 } from './dspace.types'
 import { LOGIN_RESULT, ENDPOINTS } from '../constants'
 
@@ -138,6 +138,17 @@ const request = {
     }).then(responseBody),
   delete: <T>(url: string, config?: InternalAxiosRequestConfig) =>
     apiClient.delete<T>(url, config).then(responseBody),
+}
+
+const core = {
+  /**
+   * Retrieves base api info.
+   * @returns {Promise<ApiInfo>}
+   */
+  info: async (): Promise<ApiInfo> => {
+    const response = await apiClient.get<ApiInfo>(ENDPOINTS.BASE)
+    return response.data
+  }
 }
 
 // --- Authentication Logic ---
@@ -527,6 +538,7 @@ const bitstreams = {
 // --- Main API Object ---
 const dspaceApi = {
   init,
+  core,
   auth,
   communities,
   collections,
