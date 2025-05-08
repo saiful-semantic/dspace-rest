@@ -15,7 +15,8 @@
                 "esbenp.prettier-vscode",
                 "ms-vscode.vscode-typescript-tslint-plugin",
                 "hbenl.vscode-mocha-test-adapter",
-                "google.geminicodeassist"
+                "google.geminicodeassist",
+                "eamodio.gitlens"
             ]
         }
     },
