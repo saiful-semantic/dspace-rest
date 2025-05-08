@@ -1,157 +1,237 @@
-import { equal, deepEqual } from 'assert'
+import { equal, deepEqual, ok } from 'assert'
 import sinon from 'sinon'
-import axios from 'axios'
-import dspaceApi from './dspace.api'
+import { AxiosInstance } from 'axios'
+import dspaceApi, { DSpaceApiError } from './dspace.api'
 import { LOGIN_RESULT } from '../constants'
 
 describe('DSpace API Tests', () => {
-  const baseUrl = 'https://demo.dspace.org/server'
-  const userAgent = 'TestAgent'
+  const baseUrl = 'http://test-dspace.com'
+  const userAgent = 'TestAgent/1.0'
+  let client: AxiosInstance
 
   beforeEach(() => {
-    // Reset axios defaults before each test
-    axios.defaults.headers.common = {}
-    axios.defaults.headers.get = {}
-    axios.defaults.headers.post = {}
-    axios.defaults.headers.put = {}
-    axios.defaults.headers.patch = {}
-    axios.defaults.headers.delete = {}
+    // Initialize the DSpace API. This creates the apiClient instance internally.
     dspaceApi.init(baseUrl, userAgent)
+    // Get the client instance for stubbing.
+    // Make sure getClient() is available and working as expected in dspaceApi module.
+    // If getClient() throws if not initialized, this is the correct place.
+    client = dspaceApi.getClient()
   })
 
   afterEach(() => {
-    // Clean up sinon stubs
     sinon.restore()
   })
 
   describe('Init', () => {
-    it('should set baseUrl and user agent correctly', () => {
-      equal(axios.defaults.baseURL, baseUrl)
-      equal(axios.defaults.headers['User-Agent'], userAgent)
+    it('should set baseURL and User-Agent correctly on the internal Axios instance', () => {
+      // Access the defaults of the internal client
+      const clientDefaults = dspaceApi.getClient().defaults
+      equal(clientDefaults.baseURL, baseUrl)
+      ok(clientDefaults.headers['User-Agent'] === userAgent, `Expected User-Agent '${userAgent}', but got '${clientDefaults.headers['User-Agent']}'`)
     })
   })
 
   describe('Auth', () => {
-    afterEach(() => sinon.restore())
-  
-    it('should handle successful 8+ login', async () => {
-      sinon.stub(axios, 'get')
-        .withArgs('/api/security/csrf').resolves({ headers: { 'dspace-xsrf-token': 'csrf-token' } })
+    it('should handle successful DSpace 8+ login and set auth headers', async () => {
+      const getStub = sinon.stub(client, 'get')
+        .withArgs('/api/security/csrf').resolves({ headers: { 'dspace-xsrf-token': 'csrf-token-8' }, data: {} } as any)
       
-      sinon.stub(axios, 'post')
-        .withArgs('/api/authn/login').resolves({ headers: { authorization: 'Bearer test' } })
+      const postStub = sinon.stub(client, 'post')
+        .withArgs('/api/authn/login').resolves({ headers: { authorization: 'Bearer test-token' }, data: {} } as any)
   
       const result = await dspaceApi.auth.login('testuser', 'password')
       equal(result, LOGIN_RESULT.SUCCESS)
+      equal(client.defaults.headers.common['Authorization'], 'Bearer test-token')
+      equal(client.defaults.headers.common['X-XSRF-Token'], 'csrf-token-8')
+
+      sinon.assert.calledOnce(getStub)
+      sinon.assert.calledOnce(postStub)
     })
   
-    it('should fallback to 7x login on 8+ failure', async () => {
-      const getStub = sinon.stub(axios, 'get')
-      getStub.withArgs('/api/security/csrf').rejects(new Error('CSRF not found'))
-      getStub.withArgs('/api/authn/status').resolves({ headers: { 'dspace-xsrf-token': 'csrf-token' } })
+    it('should fallback to DSpace 7 login on DSpace 8+ CSRF failure and set auth headers', async () => {
+      const getStub = sinon.stub(client, 'get')
+      getStub.withArgs('/api/security/csrf').rejects(new DSpaceApiError('CSRF not found for DSpace 8+', 404))
+      getStub.withArgs('/api/authn/status').resolves({ headers: { 'dspace-xsrf-token': 'csrf-token-7' }, data: {} } as any)
   
-      sinon.stub(axios, 'post').resolves({ headers: { authorization: 'Bearer test' } })
+      const postStub = sinon.stub(client, 'post')
+        .withArgs('/api/authn/login').resolves({ headers: { authorization: 'Bearer test-token-7' }, data: {} } as any)
   
       const result = await dspaceApi.auth.login('testuser', 'password')
       equal(result, LOGIN_RESULT.SUCCESS)
+      equal(client.defaults.headers.common['Authorization'], 'Bearer test-token-7')
+      equal(client.defaults.headers.common['X-XSRF-Token'], 'csrf-token-7')
+
+      sinon.assert.calledWith(getStub, '/api/security/csrf')
+      sinon.assert.calledWith(getStub, '/api/authn/status')
+      sinon.assert.calledOnce(postStub)
     })
+
+    it('should handle total login failure if both strategies fail', async () => {
+      const getStub = sinon.stub(client, 'get')
+      getStub.withArgs('/api/security/csrf').rejects(new DSpaceApiError('CSRF not found for DSpace 8+', 404))
+      getStub.withArgs('/api/authn/status').rejects(new DSpaceApiError('CSRF not found for DSpace 7', 404))
+      // Post stub should not be called if CSRF fails for both
+      const postStub = sinon.stub(client, 'post')
   
-    it('should handle total login failure', async () => {
-      sinon.stub(axios, 'get').rejects(new Error('No auth'))
       const result = await dspaceApi.auth.login('wronguser', 'wrongpass')
       equal(result, LOGIN_RESULT.FAILURE)
+      ok(!client.defaults.headers.common['Authorization'], 'Authorization header should not be set on failure')
+      ok(!client.defaults.headers.common['X-XSRF-Token'], 'X-XSRF-Token header should not be set on failure')
+      sinon.assert.notCalled(postStub)
+    })
+
+    it('should clear auth headers on logout', async () => {
+      // Simulate a logged-in state
+      client.defaults.headers.common['Authorization'] = 'Bearer old-token'
+      client.defaults.headers.common['X-XSRF-Token'] = 'old-csrf-token'
+
+      const postStub = sinon.stub(client, 'post').withArgs('/api/authn/logout').resolves({} as any)
+      
+      await dspaceApi.auth.logout()
+
+      ok(!client.defaults.headers.common['Authorization'], 'Authorization header should be cleared after logout')
+      ok(!client.defaults.headers.common['X-XSRF-Token'], 'X-XSRF-Token header should be cleared after logout')
+      sinon.assert.calledOnce(postStub)
+    })
+
+    it('should handle logout failure but still clear local tokens', async () => {
+       // Simulate a logged-in state
+      client.defaults.headers.common['Authorization'] = 'Bearer old-token'
+      client.defaults.headers.common['X-XSRF-Token'] = 'old-csrf-token'
+
+      sinon.stub(client, 'post').withArgs('/api/authn/logout').rejects(new DSpaceApiError('Logout API failed', 500))
+      
+      try {
+        await dspaceApi.auth.logout()
+      } catch (e: any) {
+        ok(e instanceof DSpaceApiError, 'Should throw DSpaceApiError on logout failure')
+        equal(e.message, 'Logout failed') // As per the updated API client
+      }
+
+      ok(!client.defaults.headers.common['Authorization'], 'Authorization header should be cleared even if API logout fails')
+      ok(!client.defaults.headers.common['X-XSRF-Token'], 'X-XSRF-Token header should be cleared even if API logout fails')
+    })
+
+     it('should get authentication status and update CSRF token', async () => {
+      const mockStatusResponse = { authenticated: true, epeopleId: 'user123' }
+      const newCsrfToken = 'new-csrf-from-status'
+      sinon.stub(client, 'get')
+        .withArgs('/api/authn/status')
+        .resolves({ data: mockStatusResponse, headers: { 'dspace-xsrf-token': newCsrfToken } } as any)
+
+      const status = await dspaceApi.auth.status()
+      deepEqual(status, mockStatusResponse)
+      equal(client.defaults.headers.common['X-XSRF-Token'], newCsrfToken, 'CSRF token should be updated from status response')
     })
   })
 
   describe('Communities', () => {
-    it('should get all communities', async () => {
-      const mockCommunities = { communities: [] }
-      sinon.stub(axios, 'get').resolves({ data: mockCommunities })
+    it('should get all communities with default pagination', async () => {
+      const mockCommunities = { _embedded: { communities: [] } } // DSpace often uses _embedded
+      const getStub = sinon.stub(client, 'get').resolves({ data: mockCommunities } as any)
       
-      const result = await dspaceApi.communities.all()
+      const result = await dspaceApi.communities.all() // Uses size=20, page=0 by default
       deepEqual(result, mockCommunities)
+      sinon.assert.calledWith(getStub, '/api/core/communities?size=20&page=0')
+    })
+
+    it('should get all communities with specified pagination', async () => {
+      const mockCommunities = { _embedded: { communities: [] } }
+      const getStub = sinon.stub(client, 'get').resolves({ data: mockCommunities } as any)
+      
+      await dspaceApi.communities.all(50, 2)
+      sinon.assert.calledWith(getStub, '/api/core/communities?size=50&page=2')
     })
 
     it('should get community by ID', async () => {
-      const mockCommunity = { id: 'test-id' }
-      sinon.stub(axios, 'get').resolves({ data: mockCommunity })
+      const mockCommunity = { id: 'test-id', type: 'community' }
+      const getStub = sinon.stub(client, 'get').resolves({ data: mockCommunity } as any)
       
       const result = await dspaceApi.communities.byId('test-id')
       deepEqual(result, mockCommunity)
+      sinon.assert.calledWith(getStub, '/api/core/communities/test-id')
     })
 
-    it('should get top communities', async () => {
-      const mockTopCommunities = { communities: [{ id: 'top-1' }] }
-      const getStub = sinon.stub(axios, 'get').resolves({ data: mockTopCommunities })
+    it('should get top communities with default pagination', async () => {
+      const mockTopCommunities = { _embedded: { communities: [{ id: 'top-1' }] } }
+      const getStub = sinon.stub(client, 'get').resolves({ data: mockTopCommunities } as any)
       
       const result = await dspaceApi.communities.top()
       deepEqual(result, mockTopCommunities)
-      sinon.assert.calledWith(getStub, '/api/core/communities/search/top?size=20')
+      sinon.assert.calledWith(getStub, '/api/core/communities/search/top?size=20&page=0')
     })
 
-    it('should get subcommunities by ID', async () => {
-      const mockSubCommunities = { subcommunities: [{ id: 'sub-1' }] }
-      const getStub = sinon.stub(axios, 'get').resolves({ data: mockSubCommunities })
+    it('should get subcommunities by ID with default pagination', async () => {
+      const mockSubCommunities = { _embedded: { subcommunities: [{ id: 'sub-1' }] } }
+      const getStub = sinon.stub(client, 'get').resolves({ data: mockSubCommunities } as any)
       
       const result = await dspaceApi.communities.subById('parent-com')
       deepEqual(result, mockSubCommunities)
-      sinon.assert.calledWith(getStub, '/api/core/communities/parent-com/subcommunities?size=100')
+      sinon.assert.calledWith(getStub, '/api/core/communities/parent-com/subcommunities?size=100&page=0')
     })
   })
 
   describe('Collections', () => {
-    it('should get collections by community ID', async () => {
-      const mockCollections = { collections: [] }
-      sinon.stub(axios, 'get').resolves({ data: mockCollections })
+    it('should get collections by community ID with specified pagination', async () => {
+      const mockCollections = { _embedded: { collections: [] } }
+      const getStub = sinon.stub(client, 'get').resolves({ data: mockCollections } as any)
       
-      const result = await dspaceApi.collections.byComId('test-com-id')
+      const result = await dspaceApi.collections.byComId('test-com-id', 50, 1)
       deepEqual(result, mockCollections)
+      sinon.assert.calledWith(getStub, '/api/core/communities/test-com-id/collections?size=50&page=1')
     })
 
-    it('should create collection', async () => {
-      const mockCollection = { id: 'new-collection' }
-      sinon.stub(axios, 'post').resolves({ data: mockCollection })
+    it('should create collection under a community', async () => {
+      const mockCollection = { id: 'new-collection', name: 'Test Collection' }
+      const payload = { name: 'Test Collection', metadata: { /* ... */ } }
+      const postStub = sinon.stub(client, 'post').resolves({ data: mockCollection } as any)
       
-      const result = await dspaceApi.collections.create('test-com-id', {})
+      const result = await dspaceApi.collections.create('test-com-id', payload)
       deepEqual(result, mockCollection)
+      // Note: The API client constructs this URL: `${ENDPOINTS.COMMUNITIES}/${comId}/collections`
+      sinon.assert.calledWith(postStub, '/api/core/communities/test-com-id/collections', payload)
     })
   })
 
   describe('Items', () => {
     it('should get item by ID', async () => {
-      const mockItem = { id: 'test-item' }
-      sinon.stub(axios, 'get').resolves({ data: mockItem })
+      const mockItem = { id: 'test-item', type: 'item' }
+      const getStub = sinon.stub(client, 'get').resolves({ data: mockItem } as any)
       
       const result = await dspaceApi.items.byId('test-item')
       deepEqual(result, mockItem)
+      sinon.assert.calledWith(getStub, '/api/core/items/test-item')
     })
 
     it('should update item', async () => {
-      const mockUpdatedItem = { id: 'test-item', updated: true }
-      sinon.stub(axios, 'patch').resolves({ data: mockUpdatedItem })
+      const mockUpdatedItem = { id: 'test-item', name: 'Updated Name' }
+      const payload = [{ op: 'replace', path: '/name', value: 'Updated Name' }] // Example JSON patch payload
+      const patchStub = sinon.stub(client, 'patch').resolves({ data: mockUpdatedItem } as any)
       
-      const result = await dspaceApi.items.update('test-item', { updated: true })
+      const result = await dspaceApi.items.update('test-item', payload)
       deepEqual(result, mockUpdatedItem)
+      sinon.assert.calledWith(patchStub, '/api/core/items/test-item', payload)
     })
 
-    it('should get all items with pagination', async () => {
-      const mockItems = { items: [{ id: 'item-1' }] }
-      const getStub = sinon.stub(axios, 'get').resolves({ data: mockItems })
+    it('should get all items with specified size and default page', async () => {
+      const mockItems = { _embedded: { items: [{ id: 'item-1' }] } }
+      const getStub = sinon.stub(client, 'get').resolves({ data: mockItems } as any)
       
-      const result = await dspaceApi.items.all(50)
+      const result = await dspaceApi.items.all(50) // page defaults to 0
       deepEqual(result, mockItems)
-      sinon.assert.calledWith(getStub, '/api/core/items?size=50')
+      sinon.assert.calledWith(getStub, '/api/core/items?size=50&page=0')
     })
 
     it('should move item to new collection', async () => {
-      const putStub = sinon.stub(axios, 'put').resolves({ data: {} })
+      const putStub = sinon.stub(client, 'put').resolves({ data: {} } as any) // putUri uses client.put
       
-      await dspaceApi.items.move('test-item', 'target-collection')
+      await dspaceApi.items.move('test-item', 'target-collection-id')
+      const expectedUri = `${baseUrl}/api/core/collections/target-collection-id`
       sinon.assert.calledWith(
         putStub, 
         '/api/core/items/test-item/owningCollection',
-        `${baseUrl}/api/core/collections/target-collection`,
-        { headers: { 'Content-Type': 'text/uri-list' } }
+        expectedUri, // The body of the PUT request for text/uri-list
+        sinon.match({ headers: { 'Content-Type': 'text/uri-list' } })
       )
     })
   })
@@ -159,61 +239,97 @@ describe('DSpace API Tests', () => {
   describe('Bundles', () => {
     it('should get bundle by ID', async () => {
       const mockBundle = { id: 'test-bundle', name: 'ORIGINAL' }
-      const getStub = sinon.stub(axios, 'get').resolves({ data: mockBundle })
+      const getStub = sinon.stub(client, 'get').resolves({ data: mockBundle } as any)
       
       const result = await dspaceApi.bundles.byId('test-bundle')
       deepEqual(result, mockBundle)
       sinon.assert.calledWith(getStub, '/api/core/bundles/test-bundle')
     })
 
-    it('should get bundles by item ID', async () => {
+    it('should get bundles by item ID with default pagination', async () => {
       const mockBundles = { _embedded: { bundles: [{ id: 'bundle-1' }] } }
-      const getStub = sinon.stub(axios, 'get').resolves({ data: mockBundles })
+      const getStub = sinon.stub(client, 'get').resolves({ data: mockBundles } as any)
       
-      const result = await dspaceApi.bundles.byItemId('test-item')
+      const result = await dspaceApi.bundles.byItemId('test-item-id') // size=20, page=0
       deepEqual(result, mockBundles)
-      sinon.assert.calledWith(getStub, '/api/core/items/test-item/bundles')
+      sinon.assert.calledWith(getStub, '/api/core/items/test-item-id/bundles?size=20&page=0')
     })
   })
 
   describe('Bitstreams', () => {
-    it('should get bitstreams by bundle ID', async () => {
+    it('should get bitstreams by bundle ID with custom pagination', async () => {
       const mockBitstreams = { _embedded: { bitstreams: [{ id: 'bit-1' }] } }
-      const getStub = sinon.stub(axios, 'get').resolves({ data: mockBitstreams })
+      const getStub = sinon.stub(client, 'get').resolves({ data: mockBitstreams } as any)
       
-      const result = await dspaceApi.bitstreams.byBundleId('test-bundle')
+      const result = await dspaceApi.bitstreams.byBundleId('test-bundle-id', 10, 1)
       deepEqual(result, mockBitstreams)
-      sinon.assert.calledWith(getStub, '/api/core/bundles/test-bundle/bitstreams')
+      sinon.assert.calledWith(getStub, '/api/core/bundles/test-bundle-id/bitstreams?size=10&page=1')
     })
 
-    it('should create new bitstream', async () => {
-      const mockBitstream = { id: 'new-bitstream' }
-      const postStub = sinon.stub(axios, 'post').resolves({ data: mockBitstream })
+    it('should create new bitstream without explicit name', async () => {
+      const mockBitstream = { id: 'new-bitstream', name: 'file.txt' }
+      // postForm uses client.post
+      const postStub = sinon.stub(client, 'post').resolves({ data: mockBitstream } as any)
       
-      const formData = new FormData()
-      const result = await dspaceApi.bitstreams.create('test-bundle', formData)
+      const formData = new FormData() // Assuming FormData is available in test env (e.g. jsdom)
+      formData.append('file', new Blob(['content']), 'file.txt')
+
+      const result = await dspaceApi.bitstreams.create('test-bundle-id', formData)
       deepEqual(result, mockBitstream)
       sinon.assert.calledWith(
         postStub,
-        '/api/core/bundles/test-bundle/bitstreams',
+        '/api/core/bundles/test-bundle-id/bitstreams', // URL without name query param
         formData,
-        { headers: { 'Content-Type': 'multipart/form-data' } }
+        sinon.match({ headers: { 'Content-Type': 'multipart/form-data' } })
       )
     })
 
-    it('should delete bitstream', async () => {
-      const deleteStub = sinon.stub(axios, 'delete').resolves({ data: undefined })
+    it('should create new bitstream with explicit name', async () => {
+      const mockBitstream = { id: 'new-bitstream', name: 'customName.pdf' }
+      const postStub = sinon.stub(client, 'post').resolves({ data: mockBitstream } as any)
       
-      await dspaceApi.bitstreams.delete('test-bitstream')
-      sinon.assert.calledWith(deleteStub, '/api/core/bitstreams/test-bitstream')
+      const formData = new FormData()
+      formData.append('file', new Blob(['pdf content']), 'original.pdf')
+      const bitstreamName = 'customName.pdf'
+
+      const result = await dspaceApi.bitstreams.create('test-bundle-id', formData, bitstreamName)
+      deepEqual(result, mockBitstream)
+      const expectedUrl = `/api/core/bundles/test-bundle-id/bitstreams?name=${encodeURIComponent(bitstreamName)}`
+      sinon.assert.calledWith(
+        postStub,
+        expectedUrl,
+        formData,
+        sinon.match({ headers: { 'Content-Type': 'multipart/form-data' } })
+      )
     })
 
-    it('should delete multiple bitstreams', async () => {
-      const payload = { bitstreams: ['id1', 'id2'] }
-      const patchStub = sinon.stub(axios, 'patch').resolves({ data: undefined })
+    it('should delete bitstream by ID', async () => {
+      const deleteStub = sinon.stub(client, 'delete').resolves({ data: undefined } as any) // delete uses client.delete
       
-      await dspaceApi.bitstreams.multiDelete(payload)
+      await dspaceApi.bitstreams.deleteById('test-bitstream-id')
+      sinon.assert.calledWith(deleteStub, '/api/core/bitstreams/test-bitstream-id')
+    })
+
+    it('should perform batch update on bitstreams (e.g. multiple delete)', async () => {
+      // Example payload for deleting multiple bitstreams (structure depends on DSpace version)
+      const payload = [ 
+        { op: 'remove', path: '/bitstreams/id1' },
+        { op: 'remove', path: '/bitstreams/id2' }
+      ]
+      const patchStub = sinon.stub(client, 'patch').resolves({ data: { status: 'success' } } as any) // batchUpdate uses client.patch
+      
+      await dspaceApi.bitstreams.batchUpdate(payload)
       sinon.assert.calledWith(patchStub, '/api/core/bitstreams', payload)
+    })
+
+    it('should retrieve bitstream content', async () => {
+      const mockArrayBuffer = new ArrayBuffer(8)
+      // retrieve directly calls apiClient.get
+      const getStub = sinon.stub(client, 'get').resolves({ data: mockArrayBuffer } as any)
+
+      const result = await dspaceApi.bitstreams.retrieve('test-bitstream-id')
+      deepEqual(result, mockArrayBuffer)
+      sinon.assert.calledWith(getStub, '/api/core/bitstreams/test-bitstream-id/retrieve', { responseType: 'arraybuffer' })
     })
   })
 })

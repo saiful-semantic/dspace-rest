@@ -116,7 +116,7 @@ export async function newBitstream(itemId: string, name: string, filePath: strin
 
 export async function deleteBitstreams(bitstreamId: string) {
   try {
-    await dspaceApi.bitstreams.delete(bitstreamId)
+    await dspaceApi.bitstreams.deleteById(bitstreamId)
     console.log(`Bitstream deleted: ${bitstreamId}`)
   } catch (e: any) {
     console.error(`Delete bitstream (id: ${bitstreamId} failed: ${e.errorCode}`)
@@ -126,7 +126,7 @@ export async function deleteBitstreams(bitstreamId: string) {
 
 export async function deleteBitstreamsMulti(payload: any) {
   try {
-    await dspaceApi.bitstreams.multiDelete(payload)
+    await dspaceApi.bitstreams.batchUpdate(payload)
   } catch (e: any) {
     console.error(`Delete bitstream failed: ${e.errorCode}`)
     process.env.DEBUG && console.dir(e)
@@ -144,7 +144,7 @@ export async function deleteBitstreamsByItemId(itemId: string) {
         const bitstreams = res._embedded.bitstreams
         for (const bitstream of bitstreams) {
           try {
-            await dspaceApi.bitstreams.delete(bitstream.uuid)
+            await dspaceApi.bitstreams.deleteById(bitstream.uuid)
             console.log(`Bitstream (bundle: ${bundle.name}) deleted: ${bitstream.name}`)
           } catch {
             console.log(`Delete bitstream (bundle: ${bundle.name}) failed for: ${bitstream.name}`)
