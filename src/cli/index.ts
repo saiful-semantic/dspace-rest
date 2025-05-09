@@ -7,39 +7,33 @@ import { configCommands } from './commands/config'
 import { itemsCommands } from './commands/items'
 import { bitstreamsCommands } from './commands/bitstreams'
 import { collectionsCommands } from './commands/collections'
-import { dspaceClient } from './services/dspace-client.service'
 
 async function setupCommands(program: Command) {
   // Configuration Commands
   program
-    .command('config:set <key> <value>')
-    .description('Set a configuration value')
+    .command('config:set <REST_API_URL>')
+    .description('Set the DSpace REST API URL')
     .action(configCommands.set)
+
+  program
+    .command('config:reset')
+    .description('Reset the configuration')
+    .action(configCommands.reset)
+
+  program
+    .command('config:verify')
+    .description('Verify DSpace REST API URL and update configuration')
+    .action(configCommands.verify)
 
   program
     .command('config:show')
     .description('Show current configuration')
     .action(configCommands.show)
 
-  // Core info
-  program
-    .command('server:info')
-    .description('Show DSpace info')
-    .action(async (): Promise<void> => {
-      await dspaceClient.ensureAuth()
-      const info = await dspaceClient.info()
-      console.log(`DSpace Name: ${info.dspaceName}`)
-      console.log(`DSpace Server: ${info.dspaceServer}`)
-      console.log(`DSpace UI: ${info.dspaceUI}`)
-      console.log(`DSpace Version: ${info.dspaceVersion}`)
-    })
-
   // Authentication Commands
   program
     .command('login')
     .description('Store DSpace credentials securely')
-    .option('-u, --username <username>', 'DSpace username')
-    .option('-p, --password <password>', 'DSpace password')
     .action(authCommands.login)
 
   // Item Commands
@@ -100,7 +94,7 @@ async function main() {
   program
     .name('dspace-cli')
     .description('DSpace REST API CLI Client')
-    .version(packageJson.version)
+    .version(packageJson.version, '-v, --version')
 
   await setupCommands(program)
 
