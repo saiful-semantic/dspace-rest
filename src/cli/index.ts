@@ -34,8 +34,6 @@ async function setupCommands(program: Command) {
   program
     .command('login')
     .description('Store DSpace credentials securely')
-    .option('-u, --username <username>', 'DSpace username')
-    .option('-p, --password <password>', 'DSpace password')
     .action(authCommands.login)
 
   // Item Commands

@@ -12,6 +12,7 @@ describe('CLI: Auth Commands', () => {
   let dspaceLoginStub: sinon.SinonStub
   let authSetStub: sinon.SinonStub
   let configStub: sinon.SinonStub
+  let consoleLogStub: sinon.SinonStub
 
   beforeEach(() => {
     promptStub = sinon.stub(promptService, 'prompt')
@@ -19,6 +20,7 @@ describe('CLI: Auth Commands', () => {
     dspaceLoginStub = sinon.stub(dspaceClient, 'login')
     authSetStub = sinon.stub(authStore, 'set')
     configStub = sinon.stub(configService, 'loadConfig')
+    consoleLogStub = sinon.stub(console, 'log')
     configStub.returns({ baseURL: 'http://test' })
   })
 
@@ -26,29 +28,61 @@ describe('CLI: Auth Commands', () => {
     sinon.restore()
   })
 
-  it('should login with provided username and password', async () => {
-    dspaceLoginStub.resolves()
-    await authCommands.login({ username: 'user', password: 'pass' })
-    assert.ok(dspaceInitStub.calledWith('http://test'))
-    assert.ok(dspaceLoginStub.calledWith('user', 'pass'))
-    assert.ok(authSetStub.calledWith('credentials', { username: 'user', password: 'pass' }))
-  })
+  it('should prompt for username and password and login successfully', async () => {
+    // Setup prompt responses
+    promptStub.onFirstCall().resolves('testuser')
+    promptStub.onSecondCall().resolves('testpass')
 
-  it('should prompt for username and password if not provided', async () => {
-    promptStub.onFirstCall().resolves('user')
-    promptStub.onSecondCall().resolves('pass')
+    // Setup successful login
     dspaceLoginStub.resolves()
-    await authCommands.login({})
+
+    await authCommands.login()
+
+    // Verify prompts
     assert.ok(promptStub.calledTwice)
-    assert.ok(dspaceLoginStub.calledWith('user', 'pass'))
-    assert.ok(authSetStub.calledWith('credentials', { username: 'user', password: 'pass' }))
+    assert.ok(promptStub.firstCall.calledWith('Username:'))
+    assert.ok(promptStub.secondCall.calledWith('Password:', true))
+
+    // Verify DSpace client initialization
+    assert.ok(dspaceInitStub.calledWith('http://test'))
+    assert.ok(dspaceLoginStub.calledWith('testuser', 'testpass'))
+
+    // Verify auth storage
+    assert.ok(authSetStub.calledWith('credentials', {
+      username: 'testuser',
+      password: 'testpass'
+    }))
+
+    // Verify success message
+    assert.ok(consoleLogStub.calledWith('✅ Login successful! Credentials stored securely.'))
   })
 
   it('should throw error if login fails', async () => {
-    dspaceLoginStub.rejects(new Error('fail'))
+    // Setup prompt responses
+    promptStub.onFirstCall().resolves('testuser')
+    promptStub.onSecondCall().resolves('testpass')
+
+    // Setup failed login
+    dspaceLoginStub.rejects(new Error('Invalid credentials'))
+
     await assert.rejects(
-      () => authCommands.login({ username: 'user', password: 'pass' }),
-      /Login failed: fail/
+      () => authCommands.login(),
+      /Login failed: Invalid credentials/
+    )
+
+    // Verify auth storage wasn't called
+    assert.ok(authSetStub.notCalled)
+  })
+
+  it('should throw error if REST API URL is not configured', async () => {
+    configStub.returns({}) // No baseURL in config
+
+    await assert.rejects(
+      () => authCommands.login(),
+      {
+        name: 'Error',
+        message: `Set the URL first with 'config:set <REST_API_URL>'`
+      }
     )
   })
 })

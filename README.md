@@ -134,7 +134,9 @@ The CLI is available as `dspace-cli`. You can run it in a few ways:
 Before using most commands, set your DSpace server URL and login credentials:
 
 ```bash
-dspace-cli config:set baseURL https://demo.dspace.org/server
+dspace-cli config:set https://demo.dspace.org/server
+dspace-cli config:verify
+dspace-cli config:show
 dspace-cli login
 ```
 

@@ -4,10 +4,14 @@ import { authStore } from '../utils/store'
 import { configService } from '../services/config.service'
 
 export const authCommands = {
-  async login(options: { username?: string; password?: string }): Promise<void> {
+  async login(): Promise<void> {
     const config = configService.loadConfig()
-    const username = options.username || await promptService.prompt('Username:')
-    const password = options.password || await promptService.prompt('Password:', true)
+    if (!config.baseURL) {
+      throw new Error(`Set the URL first with 'config:set <REST_API_URL>'`)
+    }
+
+    const username = await promptService.prompt('Username:')
+    const password = await promptService.prompt('Password:', true)
 
     try {
       dspaceClient.init(config.baseURL as string)
