@@ -40,6 +40,29 @@ describe('CLI: Config Commands', () => {
     })
   })
 
+  describe('config:reset', () => {
+    it('should reset the configuration to empty object', async () => {
+      const config: any = { baseURL: 'https://example.edu/server' }
+      loadConfigStub.returns(config)
+
+      await configCommands.reset()
+
+      assert.ok(saveConfigStub.calledOnce)
+      assert.deepEqual(saveConfigStub.firstCall.args[0], {})
+      assert.ok(consoleLogStub.calledWith('✅ Reset baseURL'))
+    })
+
+    it('should not preserve any existing configuration', async () => {
+      // This test ensures reset completely clears the config
+      // even if there was previous configuration
+      await configCommands.reset()
+
+      const savedConfig = saveConfigStub.firstCall.args[0]
+      assert.deepEqual(savedConfig, {})
+      assert.equal(Object.keys(savedConfig).length, 0)
+    })
+  })
+
   describe('config:verify', () => {
     it('should successfully verify a reachable server', async () => {
       const config: any = { baseURL: 'https://example.edu/server' }

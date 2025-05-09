@@ -10,6 +10,12 @@ export const configCommands = {
     console.log(`✅ Set baseURL=${value}`)
   },
 
+  async reset(): Promise<void> {
+    const config = {}
+    configService.saveConfig(config)
+    console.log(`✅ Reset baseURL`)
+  },
+
   async verify(): Promise<void> {
     const config = configService.loadConfig()
     dspaceClient.init(config.baseURL as string)

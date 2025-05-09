@@ -17,6 +17,11 @@ async function setupCommands(program: Command) {
     .action(configCommands.set)
 
   program
+    .command('config:reset')
+    .description('Reset the configuration')
+    .action(configCommands.reset)
+
+  program
     .command('config:verify')
     .description('Verify DSpace REST API URL and update configuration')
     .action(configCommands.verify)
