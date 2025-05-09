@@ -1,10 +1,10 @@
-import axios, { AxiosError, AxiosResponse, AxiosInstance, InternalAxiosRequestConfig } from 'axios'
+import axios, {AxiosError, AxiosResponse, AxiosInstance, InternalAxiosRequestConfig} from 'axios'
 import qs from 'node:querystring'
 import {
   Communities, SubCommunities, Collection, Collections, Community,
   Item, Items, Bundle, Bundles, Bitstream, Bitstreams, ApiInfo
 } from './dspace.types'
-import { LOGIN_RESULT, ENDPOINTS } from '../constants'
+import {LOGIN_RESULT, ENDPOINTS} from '../constants'
 
 // Define a more specific type for payloads if possible, or use a generic
 // For now, we'll keep it as Record<string, any> for flexibility, but ideally,
@@ -62,7 +62,7 @@ const init = (baseUrl: string, userAgent: string): void => {
     (res: AxiosResponse) => res, // Simply return successful responses
     (error: AxiosError) => {
       const response = error.response
-      let errorMessage = 'An unexpected error occurred.'
+      let errorMessage: string
       let errorStatus: number | undefined
       let errorData: any = null
 
@@ -173,11 +173,11 @@ const auth = {
 
       const loginRes = await apiClient.post(
         ENDPOINTS.LOGIN,
-        qs.stringify({ user, password }),
+        qs.stringify({user, password}),
         {
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
-            ...(csrfToken && { 'X-XSRF-Token': csrfToken }),
+            ...(csrfToken && {'X-XSRF-Token': csrfToken}),
             Cookie: `DSPACE-XSRF-COOKIE=${csrfToken}`
           },
         }
@@ -187,7 +187,7 @@ const auth = {
         apiClient.defaults.headers.common['Authorization'] = loginRes.headers.authorization
       }
       if (csrfToken) {
-          apiClient.defaults.headers.common['X-XSRF-Token'] = csrfToken
+        apiClient.defaults.headers.common['X-XSRF-Token'] = csrfToken
       }
       return LOGIN_RESULT.SUCCESS
     }
@@ -232,7 +232,7 @@ const auth = {
       const response = await apiClient.get(ENDPOINTS.STATUS)
       const csrfToken = response.headers['dspace-xsrf-token'] || response.headers['xsrf-token']
       if (csrfToken && apiClient?.defaults?.headers?.common) { // Ensure apiClient and headers are defined
-         apiClient.defaults.headers.common['X-XSRF-Token'] = csrfToken
+        apiClient.defaults.headers.common['X-XSRF-Token'] = csrfToken
       }
       return response.data
     } catch (error: any) {
@@ -251,7 +251,7 @@ const communities = {
    * @param {number} [page=0] - The page number (0-indexed).
    * @returns {Promise<Communities>}
    */
-  all: (size = 20, page = 0): Promise<Communities> =>
+  all: (size: number = 20, page: number = 0): Promise<Communities> =>
     request.get<Communities>(`${ENDPOINTS.COMMUNITIES}?size=${size}&page=${page}`),
 
   /**
@@ -268,7 +268,7 @@ const communities = {
    * @param {number} [page=0] - The page number.
    * @returns {Promise<Communities>}
    */
-  top: (size = 20, page = 0): Promise<Communities> =>
+  top: (size: number = 20, page: number = 0): Promise<Communities> =>
     request.get<Communities>(`${ENDPOINTS.COMMUNITIES}/search/top?size=${size}&page=${page}`),
 
   /**
@@ -278,7 +278,7 @@ const communities = {
    * @param {number} [page=0] - The page number.
    * @returns {Promise<SubCommunities>}
    */
-  subById: (comId: string, size = 100, page = 0): Promise<SubCommunities> =>
+  subById: (comId: string, size: number = 100, page: number = 0): Promise<SubCommunities> =>
     request.get<SubCommunities>(`${ENDPOINTS.COMMUNITIES}/${comId}/subcommunities?size=${size}&page=${page}`),
 
   /**
@@ -320,7 +320,7 @@ const collections = {
    * @param {number} [page=0] - Page number.
    * @returns {Promise<Collections>}
    */
-  all: (size = 20, page = 0): Promise<Collections> =>
+  all: (size: number = 20, page: number = 0): Promise<Collections> =>
     request.get<Collections>(`${ENDPOINTS.COLLECTIONS}?size=${size}&page=${page}`),
 
   /**
@@ -334,11 +334,11 @@ const collections = {
   /**
    * Retrieves collections within a specific community.
    * @param {string} comId - The community UUID.
-   * @param {number} [size=100] - Number of collections per page.
+   * @param {number} [size=10] - Number of collections per page.
    * @param {number} [page=0] - Page number.
    * @returns {Promise<Collections>}
    */
-  byComId: (comId: string, size = 100, page = 0): Promise<Collections> =>
+  byComId: (comId: string, size: number = 10, page: number = 0): Promise<Collections> =>
     request.get<Collections>(`${ENDPOINTS.COMMUNITIES}/${comId}/collections?size=${size}&page=${page}`),
 
   /**
@@ -349,7 +349,7 @@ const collections = {
    */
   create: (comId: string, payload: Payload): Promise<Collection> =>
     request.post<Collection>(`${ENDPOINTS.COMMUNITIES}/${comId}/collections`, payload),
-    // Original had ?parent=comId on /api/core/collections, DSpace 7+ usually nests under community for creation
+  // Original had ?parent=comId on /api/core/collections, DSpace 7+ usually nests under community for creation
 
   /**
    * Deletes a collection by its ID.
@@ -376,7 +376,7 @@ const items = {
    * @param {number} [page=0] - Page number.
    * @returns {Promise<Items>}
    */
-  all: (size = 20, page = 0): Promise<Items> =>
+  all: (size: number = 20, page: number = 0): Promise<Items> =>
     request.get<Items>(`${ENDPOINTS.ITEMS}?size=${size}&page=${page}`),
 
   /**
@@ -440,7 +440,7 @@ const bundles = {
    * @param {number} [page=0] - Page number.
    * @returns {Promise<Bundles>}
    */
-  byItemId: (itemId: string, size = 20, page = 0): Promise<Bundles> =>
+  byItemId: (itemId: string, size: number = 20, page: number = 0): Promise<Bundles> =>
     request.get<Bundles>(`${ENDPOINTS.ITEMS}/${itemId}/bundles?size=${size}&page=${page}`),
 
   /**
@@ -476,7 +476,7 @@ const bitstreams = {
    * @param {number} [page=0] - Page number.
    * @returns {Promise<Bitstreams>}
    */
-  byBundleId: (bundleId: string, size = 20, page = 0): Promise<Bitstreams> =>
+  byBundleId: (bundleId: string, size: number = 20, page: number = 0): Promise<Bitstreams> =>
     request.get<Bitstreams>(`${ENDPOINTS.BUNDLES}/${bundleId}/bitstreams?size=${size}&page=${page}`),
 
   /**
@@ -510,7 +510,7 @@ const bitstreams = {
    * @returns {Promise<ArrayBuffer>} Or Blob, depending on how you want to handle the data.
    */
   retrieve: (bitstreamId: string): Promise<ArrayBuffer> =>
-    apiClient.get<ArrayBuffer>(`${ENDPOINTS.BITSTREAMS}/${bitstreamId}/retrieve`, { responseType: 'arraybuffer' }).then(responseBody),
+    apiClient.get<ArrayBuffer>(`${ENDPOINTS.BITSTREAMS}/${bitstreamId}/retrieve`, {responseType: 'arraybuffer'}).then(responseBody),
 
 
   /**
