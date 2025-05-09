@@ -42,8 +42,10 @@ describe('CLI: Config Service', () => {
   })
 
   it('should save config', () => {
-    const config = { foo: 'baz' }
+    const config = {
+      baseURL: 'https://example.edu/server'
+    }
     configService.saveConfig(config)
     assert.ok(writeFileSyncStub.calledWith(CONFIG_PATH, JSON.stringify(config, null, 2)))
-  })
+  });
 })

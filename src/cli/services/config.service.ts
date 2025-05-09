@@ -1,7 +1,14 @@
 import { fileOps } from '../utils/file-ops'
-import { Config } from '../types'
 import os from 'os'
 import path from 'path'
+
+export interface Config {
+  baseURL?: string
+  dspaceUI?: string
+  dspaceName?: string
+  dspaceVersion?: string
+  dspaceServer?: string
+}
 
 const CONFIG_DIR = path.join(os.homedir(), '.dspace')
 const CONFIG_PATH = path.join(CONFIG_DIR, 'config.json')

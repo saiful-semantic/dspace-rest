@@ -17,6 +17,11 @@ async function setupCommands(program: Command) {
     .action(configCommands.set)
 
   program
+    .command('config:verify')
+    .description('Verify DSpace server connection')
+    .action(configCommands.verify)
+
+  program
     .command('config:show')
     .description('Show current configuration')
     .action(configCommands.show)

@@ -1,11 +1,12 @@
 import * as DSpaceClient from '../../index'
+import { dspaceApi } from '../../index'
 import { configService } from './config.service'
 import { authStore } from '../utils/store'
 
 export const dspaceClient = {
-  init: DSpaceClient.init,
-  info: DSpaceClient.info,
-  login: DSpaceClient.login,
+  init: dspaceApi.init,
+  info: dspaceApi.core.info,
+  login: dspaceApi.auth.login,
   logout: DSpaceClient.logout,
   showAllItems: DSpaceClient.showAllItems,
   showItem: DSpaceClient.showItem,
