@@ -18,77 +18,44 @@ NodeJs client for DSpace 7+ [REST API](https://github.com/DSpace/RestContract)
 ```bash
 npm install dspace-rest
 ```
-or
-```bash
-yarn add dspace-rest
-```
 
 ## Example Usage
 
-The library provides both CommonJS and ES Module builds. Here are some examples:
+See the [examples directory](/examples) for practical usage examples of this library.
 
 ```typescript
-import * as DSpace from 'dspace-rest'
+// Use import for ESM (add "type": "module" to package.json)
+import { dspaceApi } from 'dspace-rest'
 // Or for CommonJS:
-// const DSpace = require('dspace-rest')
+// const { dspaceApi } = require('dspace-rest')
 
-async function main() {
-  try {
-    const baseUrl = 'https://demo.dspace.org/server'
-    const user = 'admin@example.com'
-    const password = 'password'
+// Initialize client
+dspaceApi.init('http://localhost:8080/server')
 
-    // Init and login
-    DSpace.init(baseUrl)
-    const loginResult = await DSpace.login(user, password)
-    if (loginResult !== 'login success') {
-      throw new Error('Login failed')
-    }
+dspaceApi.core.info().then((info) => {
+  console.log(info)
+})
 
-    // Show list of top communities and collections
-    await DSpace.showCollections()
+dspaceApi.auth.login('admin', 'password').then((result) => {
+  console.log(result)
+})
 
-    // Create and delete collections
-    const parentCommunityId = '5c1d0962-2a01-4563-9626-d14c964ca3ad' 
-    await DSpace.createCollection(parentCommunityId, 'Test Collection')
-    
-    // Work with items
-    const itemId = '6641e0c5-10c7-4251-ba31-1d23f1bd2813'
-    
-    // Update item metadata
-    await DSpace.updateItem(itemId, [
-      {
-        op: 'add',
-        path: '/metadata/dc.title',
-        value: [{ value: 'Updated Title' }]
-      }
-    ])
+dspaceApi.communities.top().then((communities) => {
+  const communityList = topCommunitiesResponse._embedded.communities
+  communityList.forEach((community) => {
+    console.log(community.name)
+  })
+})
 
-    // Move item to another collection
-    const targetCollectionId = 'dcbde2c8-b438-46e9-82ba-9e9e674aa3c5'
-    await DSpace.moveItem(itemId, targetCollectionId)
-
-    // Manage bitstreams
-    await DSpace.showItemBundles(itemId, 'ORIGINAL')
-    await DSpace.newBitstream(itemId, 'document.pdf', './files')
-    
-    // Batch delete bitstreams
-    await DSpace.deleteBitstreamsByItemId(itemId) // Deletes all except LICENSE bundle
-
-  } catch (error) {
-    console.error('Error:', error.message)
-    process.exit(1)
-  }
-}
-
-main()
+// More examples:
+// https://github.com/semanticlib/dspace-rest/tree/main/examples
 ```
 
 ## CLI Usage
 
 The package provides a command-line interface (CLI) for interacting with DSpace servers directly from your terminal.
 
-### Setup
+### CLI Setup
 
 The CLI is available as `dspace-cli`. You can run it in a few ways:
 
@@ -116,11 +83,15 @@ Before using most commands, set your DSpace server URL and login credentials:
 
 ```bash
 dspace-cli config:set baseURL https://demo.dspace.org/server
-dspace-cli login -u admin@example.com -p password
+dspace-cli login
 ```
 
 ### Common Commands
 
+- Server Information:
+  ```bash
+  dspace-cli server:info
+ ```
 - List all items:
   ```bash
   dspace-cli items:list
@@ -173,21 +144,6 @@ Run `dspace-cli --help` or any subcommand with `--help` for a full list of avail
   - Delete single or multiple bitstreams
   - Delete all bitstreams from an item
   - Support for ORIGINAL and LICENSE bundles
-
-## Development
-
-### Running Tests
-
-```bash
-npm run test
-```
-
-Tests cover all major functionality including:
-- Authentication flows
-- Community/Collection operations  
-- Item management
-- Bundle operations
-- Bitstream CRUD operations
 
 ## Motivation and Use Cases
 
