@@ -21,7 +21,7 @@ npm install dspace-rest
 
 ## Example Usage
 
-See the [examples directory](/examples) for practical usage examples of this library.
+See the [examples directory](https://github.com/semanticlib/dspace-rest/tree/main/examples) for practical usage examples of this library.
 
 ```typescript
 // Use import for ESM (add "type": "module" to package.json)
@@ -36,7 +36,7 @@ dspaceApi.core.info().then((info) => {
   console.log(info)
 })
 
-dspaceApi.auth.login('admin', 'password').then((result) => {
+dspaceApi.auth.login('admin@example.edu', 'password').then((result) => {
   console.log(result)
 })
 
@@ -91,7 +91,7 @@ dspace-cli login
 - Server Information:
   ```bash
   dspace-cli server:info
- ```
+  ```
 - List all items:
   ```bash
   dspace-cli items:list
