@@ -1,4 +1,4 @@
-import dspaceApi from './services/dspace.api'
+import dspaceApi from './lib/dspace.api'
 import Payload from './utils/payload'
 import {readFileSync} from 'fs'
 
