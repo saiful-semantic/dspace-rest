@@ -32,7 +32,7 @@ describe('CLI: Config Commands', () => {
       const config: any = {}
       loadConfigStub.returns(config)
 
-      await configCommands.set('baseURL', 'https://example.edu/server')
+      await configCommands.set('https://example.edu/server')
 
       assert.equal(config['baseURL'], 'https://example.edu/server')
       assert.ok(saveConfigStub.calledWith(config))
@@ -65,7 +65,7 @@ describe('CLI: Config Commands', () => {
       assert.equal(config['dspaceVersion'], mockInfo.dspaceVersion)
       assert.equal(config['dspaceServer'], mockInfo.dspaceServer)
       assert.ok(saveConfigStub.calledWith(config))
-      assert.ok(consoleLogStub.calledWith(`✅ Server is reachable at ${mockInfo.dspaceServer}`))
+      assert.ok(consoleLogStub.calledWith(`✅ Server is reachable. Configuration updated.`))
     })
 
     it('should handle unreachable server', async () => {

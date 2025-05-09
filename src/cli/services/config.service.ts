@@ -8,6 +8,7 @@ export interface Config {
   dspaceName?: string
   dspaceVersion?: string
   dspaceServer?: string
+  verified?: boolean
 }
 
 const CONFIG_DIR = path.join(os.homedir(), '.dspace')

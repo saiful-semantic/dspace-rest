@@ -12,13 +12,13 @@ import { dspaceClient } from './services/dspace-client.service'
 async function setupCommands(program: Command) {
   // Configuration Commands
   program
-    .command('config:set <key> <value>')
-    .description('Set a configuration value')
+    .command('config:set <baseURL>')
+    .description('Set the DSpace REST API URL')
     .action(configCommands.set)
 
   program
     .command('config:verify')
-    .description('Verify DSpace server connection')
+    .description('Verify DSpace REST API URL and update configuration')
     .action(configCommands.verify)
 
   program
