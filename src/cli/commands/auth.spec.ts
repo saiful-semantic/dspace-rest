@@ -21,7 +21,7 @@ describe('CLI: Auth Commands', () => {
     authSetStub = sinon.stub(authStore, 'set')
     configStub = sinon.stub(configService, 'loadConfig')
     consoleLogStub = sinon.stub(console, 'log')
-    configStub.returns({ baseURL: 'http://test' })
+    configStub.returns({ api_url: 'http://test' })
   })
 
   afterEach(() => {
@@ -75,7 +75,7 @@ describe('CLI: Auth Commands', () => {
   })
 
   it('should throw error if REST API URL is not configured', async () => {
-    configStub.returns({}) // No baseURL in config
+    configStub.returns({}) // No api_url in config
 
     await assert.rejects(
       () => authCommands.login(),

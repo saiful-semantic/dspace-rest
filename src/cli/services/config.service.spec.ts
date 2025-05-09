@@ -27,10 +27,10 @@ describe('CLI: Config Service', () => {
   it('should load config if file exists', () => {
     existsSyncStub.withArgs(CONFIG_PATH).returns(true)
     readFileSyncStub.withArgs(CONFIG_PATH, 'utf-8')
-      .returns('{"baseURL":"https://example.com","serverInfo":{"dspaceVersion":"7.6"}}')
+      .returns('{"api_url":"https://example.com","serverInfo":{"dspaceVersion":"7.6"}}')
     const config = configService.loadConfig()
     assert.deepEqual(config, {
-      baseURL: 'https://example.com',
+      api_url: 'https://example.com',
       serverInfo: {
         dspaceVersion: '7.6'
       }
@@ -49,7 +49,7 @@ describe('CLI: Config Service', () => {
 
   it('should save config with nested serverInfo', () => {
     const config: any = {
-      baseURL: 'https://example.edu/server',
+      api_url: 'https://example.edu/server',
       verified: false,
       serverInfo: {
         dspaceUI: 'https://ui.example.edu/',
@@ -65,7 +65,7 @@ describe('CLI: Config Service', () => {
 
   it('should handle empty serverInfo', () => {
     const config: any = {
-      baseURL: 'https://example.edu/server',
+      api_url: 'https://example.edu/server',
       verified: true,
       serverInfo: {}
     }

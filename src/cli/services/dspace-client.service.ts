@@ -201,11 +201,11 @@ export const dspaceClient = {
 
   async ensureAuth(): Promise<void> {
     const config = configService.loadConfig()
-    if (!config.baseURL) {
+    if (!config.api_url) {
       throw new Error('Set the URL first with config:set <REST_API_URL>')
     }
 
-    this.init(config.baseURL as string)
+    this.init(config.api_url as string)
 
     const credentials = authStore.get('credentials')
     if (!credentials) {

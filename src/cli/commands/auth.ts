@@ -6,7 +6,7 @@ import { configService } from '../services/config.service'
 export const authCommands = {
   async login(): Promise<void> {
     const config = configService.loadConfig()
-    if (!config.baseURL) {
+    if (!config.api_url) {
       throw new Error(`Set the URL first with 'config:set <REST_API_URL>'`)
     }
 
@@ -14,7 +14,7 @@ export const authCommands = {
     const password = await promptService.prompt('Password:', true)
 
     try {
-      dspaceClient.init(config.baseURL as string)
+      dspaceClient.init(config.api_url as string)
       await dspaceClient.login(username, password)
       authStore.set('credentials', { username, password })
       console.log('✅ Login successful! Credentials stored securely.')

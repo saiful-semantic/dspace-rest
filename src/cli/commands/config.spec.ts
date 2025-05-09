@@ -28,23 +28,23 @@ describe('CLI: Config Commands', () => {
   })
 
   describe('config:set', () => {
-    it('should set baseURL and mark as unverified', async () => {
+    it('should set api_url and mark as unverified', async () => {
       const config: any = { serverInfo: {} }
       loadConfigStub.returns(config)
 
       await configCommands.set('https://example.edu/server')
 
-      assert.equal(config.baseURL, 'https://example.edu/server')
+      assert.equal(config.api_url, 'https://example.edu/server')
       assert.equal(config.verified, false)
       assert.ok(saveConfigStub.calledWith(config))
-      assert.ok(consoleLogStub.calledWith('✅ Set baseURL=https://example.edu/server'))
+      assert.ok(consoleLogStub.calledWith('✅ Set api_url=https://example.edu/server'))
     })
   })
 
   describe('config:reset', () => {
     it('should reset the configuration to empty object', async () => {
       const config = {
-        baseURL: 'https://example.edu/server',
+        api_url: 'https://example.edu/server',
         verified: true,
         serverInfo: {
           dspaceUI: 'https://ui.example.edu'
@@ -55,14 +55,14 @@ describe('CLI: Config Commands', () => {
       await configCommands.reset()
 
       assert.ok(saveConfigStub.calledWith({}))
-      assert.ok(consoleLogStub.calledWith('✅ Reset baseURL'))
+      assert.ok(consoleLogStub.calledWith('✅ Reset api_url'))
     })
   })
 
   describe('config:verify', () => {
     it('should successfully verify and update server info', async () => {
       const config: any = {
-        baseURL: 'https://example.edu/server',
+        api_url: 'https://example.edu/server',
         verified: false,
         serverInfo: {}
       }
@@ -79,7 +79,7 @@ describe('CLI: Config Commands', () => {
       await new Promise(process.nextTick) // Wait for promise
 
       assert.ok(dspaceInitStub.calledWith('https://example.edu/server'))
-      assert.equal(config.baseURL, mockInfo.dspaceServer)
+      assert.equal(config.api_url, mockInfo.dspaceServer)
       assert.equal(config.verified, true)
       assert.equal(config.serverInfo.dspaceUI, mockInfo.dspaceUI)
       assert.equal(config.serverInfo.dspaceName, mockInfo.dspaceName)
@@ -90,7 +90,7 @@ describe('CLI: Config Commands', () => {
 
     it('should handle server verification failure', async () => {
       const config = {
-        baseURL: 'https://example.edu/server',
+        api_url: 'https://example.edu/server',
         serverInfo: {}
       }
       const error = new Error('Connection failed')
@@ -108,7 +108,7 @@ describe('CLI: Config Commands', () => {
   describe('config:show', () => {
     it('should display current configuration', async () => {
       const config = {
-        baseURL: 'https://example.edu/server',
+        api_url: 'https://example.edu/server',
         verified: true,
         serverInfo: {
           dspaceUI: 'https://ui.example.edu'

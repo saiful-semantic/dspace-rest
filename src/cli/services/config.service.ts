@@ -3,7 +3,7 @@ import os from 'os'
 import path from 'path'
 
 export interface Config {
-  baseURL?: string
+  api_url?: string
   verified?: boolean
   serverInfo: {
     dspaceUI?: string
