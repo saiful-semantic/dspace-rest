@@ -1,9 +1,10 @@
 import dspaceApi from './lib/dspace.api'
 import Payload from './utils/payload'
 import {readFileSync} from 'fs'
+import * as Types from './lib/dspace.types'
 
-// Export the dspaceApi object directly for advanced usage
-export { dspaceApi }
+// This allows users to access the API methods directly
+export { dspaceApi, Payload, Types }
 
 export function init (url: string, agent: string = 'DSpace NodeJs Client') {
   dspaceApi.init(url, agent)
