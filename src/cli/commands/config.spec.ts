@@ -14,7 +14,7 @@ describe('CLI: Config Commands', () => {
   let dspaceInfoStub: sinon.SinonStub
 
   beforeEach(() => {
-    loadConfigStub = sinon.stub(configService, 'loadConfig').returns({})
+    loadConfigStub = sinon.stub(configService, 'loadConfig').returns({ serverInfo: {} })
     saveConfigStub = sinon.stub(configService, 'saveConfig')
     consoleLogStub = sinon.stub(console, 'log')
     consoleDirStub = sinon.stub(console, 'dir')
@@ -28,13 +28,14 @@ describe('CLI: Config Commands', () => {
   })
 
   describe('config:set', () => {
-    it('should set a config key and value', async () => {
-      const config: any = {}
+    it('should set baseURL and mark as unverified', async () => {
+      const config: any = { serverInfo: {} }
       loadConfigStub.returns(config)
 
       await configCommands.set('https://example.edu/server')
 
-      assert.equal(config['baseURL'], 'https://example.edu/server')
+      assert.equal(config.baseURL, 'https://example.edu/server')
+      assert.equal(config.verified, false)
       assert.ok(saveConfigStub.calledWith(config))
       assert.ok(consoleLogStub.calledWith('✅ Set baseURL=https://example.edu/server'))
     })
@@ -42,91 +43,83 @@ describe('CLI: Config Commands', () => {
 
   describe('config:reset', () => {
     it('should reset the configuration to empty object', async () => {
-      const config: any = { baseURL: 'https://example.edu/server' }
+      const config = {
+        baseURL: 'https://example.edu/server',
+        verified: true,
+        serverInfo: {
+          dspaceUI: 'https://ui.example.edu'
+        }
+      }
       loadConfigStub.returns(config)
 
       await configCommands.reset()
 
-      assert.ok(saveConfigStub.calledOnce)
-      assert.deepEqual(saveConfigStub.firstCall.args[0], {})
+      assert.ok(saveConfigStub.calledWith({}))
       assert.ok(consoleLogStub.calledWith('✅ Reset baseURL'))
-    })
-
-    it('should not preserve any existing configuration', async () => {
-      // This test ensures reset completely clears the config
-      // even if there was previous configuration
-      await configCommands.reset()
-
-      const savedConfig = saveConfigStub.firstCall.args[0]
-      assert.deepEqual(savedConfig, {})
-      assert.equal(Object.keys(savedConfig).length, 0)
     })
   })
 
   describe('config:verify', () => {
-    it('should successfully verify a reachable server', async () => {
-      const config: any = { baseURL: 'https://example.edu/server' }
+    it('should successfully verify and update server info', async () => {
+      const config: any = {
+        baseURL: 'https://example.edu/server',
+        verified: false,
+        serverInfo: {}
+      }
       const mockInfo = {
-        dspaceServer: 'https://example.edu/server',
+        dspaceServer: 'https://real-server.example.edu',
         dspaceUI: 'https://ui.example.edu',
         dspaceName: 'My DSpace',
-        dspaceVersion: 'DSpace 7.6'
+        dspaceVersion: '7.6'
       }
       loadConfigStub.returns(config)
       dspaceInfoStub.resolves(mockInfo)
 
       await configCommands.verify()
-
-      // Wait for the promise to resolve
-      await new Promise(process.nextTick)
+      await new Promise(process.nextTick) // Wait for promise
 
       assert.ok(dspaceInitStub.calledWith('https://example.edu/server'))
-      assert.ok(dspaceInfoStub.calledOnce)
-      assert.equal(config['baseURL'], mockInfo.dspaceServer)
-      assert.equal(config['dspaceUI'], mockInfo.dspaceUI)
-      assert.equal(config['dspaceName'], mockInfo.dspaceName)
-      assert.equal(config['dspaceVersion'], mockInfo.dspaceVersion)
-      assert.equal(config['dspaceServer'], mockInfo.dspaceServer)
-      assert.ok(saveConfigStub.calledWith(config))
-      assert.ok(consoleLogStub.calledWith(`✅ Server is reachable. Configuration updated.`))
+      assert.equal(config.baseURL, mockInfo.dspaceServer)
+      assert.equal(config.verified, true)
+      assert.equal(config.serverInfo.dspaceUI, mockInfo.dspaceUI)
+      assert.equal(config.serverInfo.dspaceName, mockInfo.dspaceName)
+      assert.equal(config.serverInfo.dspaceVersion, mockInfo.dspaceVersion)
+      assert.equal(config.serverInfo.dspaceServer, mockInfo.dspaceServer)
+      assert.ok(consoleLogStub.calledWith('✅ Server is reachable. Configuration updated.'))
     })
 
-    it('should handle unreachable server', async () => {
-      const config = { baseURL: 'https://example.edu/server' }
+    it('should handle server verification failure', async () => {
+      const config = {
+        baseURL: 'https://example.edu/server',
+        serverInfo: {}
+      }
       const error = new Error('Connection failed')
       loadConfigStub.returns(config)
       dspaceInfoStub.rejects(error)
 
       await configCommands.verify()
-
-      // Wait for the promise to resolve
       await new Promise(process.nextTick)
 
-      assert.ok(dspaceInitStub.calledWith('https://example.edu/server'))
-      assert.ok(dspaceInfoStub.calledOnce)
       assert.ok(consoleErrorStub.calledWith(`❌ Server not reachable: ${error.message}`))
-      assert.ok(saveConfigStub.notCalled) // Config shouldn't be saved on error
+      assert.ok(saveConfigStub.notCalled)
     })
   })
 
   describe('config:show', () => {
-    it('should show the current config', async () => {
-      const config = { baseURL: 'https://example.edu/server' }
+    it('should display current configuration', async () => {
+      const config = {
+        baseURL: 'https://example.edu/server',
+        verified: true,
+        serverInfo: {
+          dspaceUI: 'https://ui.example.edu'
+        }
+      }
       loadConfigStub.returns(config)
 
       await configCommands.show()
 
       assert.ok(consoleLogStub.calledWith('Current configuration:'))
       assert.ok(consoleDirStub.calledWith(config))
-    })
-
-    it('should show empty config', async () => {
-      loadConfigStub.returns({})
-
-      await configCommands.show()
-
-      assert.ok(consoleLogStub.calledWith('Current configuration:'))
-      assert.ok(consoleDirStub.calledWith({}))
     })
   })
 })

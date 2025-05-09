@@ -4,11 +4,13 @@ import path from 'path'
 
 export interface Config {
   baseURL?: string
-  dspaceUI?: string
-  dspaceName?: string
-  dspaceVersion?: string
-  dspaceServer?: string
   verified?: boolean
+  serverInfo: {
+    dspaceUI?: string
+    dspaceName?: string
+    dspaceVersion?: string
+    dspaceServer?: string
+  }
 }
 
 const CONFIG_DIR = path.join(os.homedir(), '.dspace')

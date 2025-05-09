@@ -11,7 +11,7 @@ export const configCommands = {
   },
 
   async reset(): Promise<void> {
-    const config = {}
+    const config: any = {}
     configService.saveConfig(config)
     console.log(`✅ Reset baseURL`)
   },
@@ -21,11 +21,13 @@ export const configCommands = {
     dspaceClient.init(config.baseURL as string)
     dspaceClient.info().then(info => {
       config['baseURL'] = info['dspaceServer']
-      config['dspaceUI'] = info['dspaceUI']
-      config['dspaceName'] = info['dspaceName']
-      config['dspaceVersion'] = info['dspaceVersion']
-      config['dspaceServer'] = info['dspaceServer']
       config['verified'] = true
+      config['serverInfo'] = {
+        dspaceUI: info['dspaceUI'],
+        dspaceName: info['dspaceName'],
+        dspaceVersion: info['dspaceVersion'],
+        dspaceServer: info['dspaceServer']
+      }
       configService.saveConfig(config)
       console.log(`✅ Server is reachable. Configuration updated.`)
     }).catch(error => {

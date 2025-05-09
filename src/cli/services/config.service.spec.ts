@@ -26,9 +26,15 @@ describe('CLI: Config Service', () => {
 
   it('should load config if file exists', () => {
     existsSyncStub.withArgs(CONFIG_PATH).returns(true)
-    readFileSyncStub.withArgs(CONFIG_PATH, 'utf-8').returns('{"foo":"bar"}')
+    readFileSyncStub.withArgs(CONFIG_PATH, 'utf-8')
+      .returns('{"baseURL":"https://example.com","serverInfo":{"dspaceVersion":"7.6"}}')
     const config = configService.loadConfig()
-    assert.deepEqual(config, { foo: 'bar' })
+    assert.deepEqual(config, {
+      baseURL: 'https://example.com',
+      serverInfo: {
+        dspaceVersion: '7.6'
+      }
+    })
     assert.ok(readFileSyncStub.calledWith(CONFIG_PATH, 'utf-8'))
   })
 
@@ -41,12 +47,32 @@ describe('CLI: Config Service', () => {
     assert.ok(writeFileSyncStub.calledWith(CONFIG_PATH, sinon.match.string))
   })
 
-  it('should save config', () => {
-    const config = {
+  it('should save config with nested serverInfo', () => {
+    const config: any = {
       baseURL: 'https://example.edu/server',
       verified: false,
+      serverInfo: {
+        dspaceUI: 'https://ui.example.edu/',
+        dspaceVersion: '7.6'
+      }
     }
     configService.saveConfig(config)
-    assert.ok(writeFileSyncStub.calledWith(CONFIG_PATH, JSON.stringify(config, null, 2)))
-  });
+    assert.ok(writeFileSyncStub.calledWith(
+      CONFIG_PATH,
+      JSON.stringify(config, null, 2)
+    ))
+  })
+
+  it('should handle empty serverInfo', () => {
+    const config: any = {
+      baseURL: 'https://example.edu/server',
+      verified: true,
+      serverInfo: {}
+    }
+    configService.saveConfig(config)
+    assert.ok(writeFileSyncStub.calledWith(
+      CONFIG_PATH,
+      JSON.stringify(config, null, 2)
+    ))
+  })
 })
