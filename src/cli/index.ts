@@ -7,12 +7,11 @@ import { configCommands } from './commands/config'
 import { itemsCommands } from './commands/items'
 import { bitstreamsCommands } from './commands/bitstreams'
 import { collectionsCommands } from './commands/collections'
-import { dspaceClient } from './services/dspace-client.service'
 
 async function setupCommands(program: Command) {
   // Configuration Commands
   program
-    .command('config:set <baseURL>')
+    .command('config:set <REST_API_URL>')
     .description('Set the DSpace REST API URL')
     .action(configCommands.set)
 
@@ -30,19 +29,6 @@ async function setupCommands(program: Command) {
     .command('config:show')
     .description('Show current configuration')
     .action(configCommands.show)
-
-  // Core info
-  program
-    .command('server:info')
-    .description('Show DSpace info')
-    .action(async (): Promise<void> => {
-      await dspaceClient.ensureAuth()
-      const info = await dspaceClient.info()
-      console.log(`DSpace Name: ${info.dspaceName}`)
-      console.log(`DSpace Server: ${info.dspaceServer}`)
-      console.log(`DSpace UI: ${info.dspaceUI}`)
-      console.log(`DSpace Version: ${info.dspaceVersion}`)
-    })
 
   // Authentication Commands
   program

@@ -25,7 +25,7 @@ describe('CLI: DSpace Client Service', () => {
     configStub.returns({})
     await assert.rejects(
       () => dspaceClient.ensureAuth(),
-      /Set baseURL first/
+      /Set the URL first/
     )
   })
 

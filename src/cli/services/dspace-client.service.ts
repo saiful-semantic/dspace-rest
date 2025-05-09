@@ -20,7 +20,7 @@ export const dspaceClient = {
   async ensureAuth(): Promise<void> {
     const config = configService.loadConfig()
     if (!config.baseURL) {
-      throw new Error('Set baseURL first with config:set baseURL <url>')
+      throw new Error('Set the URL first with config:set <REST_API_URL>')
     }
 
     this.init(config.baseURL as string)
