@@ -100,7 +100,7 @@ async function main() {
   program
     .name('dspace-cli')
     .description('DSpace REST API CLI Client')
-    .version(packageJson.version)
+    .version(packageJson.version, '-v, --version')
 
   await setupCommands(program)
 

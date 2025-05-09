@@ -38,7 +38,7 @@ let internalBaseUrl: string // Store baseUrl internally
  * @param {string} baseUrl - The base URL of the DSpace instance.
  * @param {string} userAgent - The User-Agent string for requests.
  */
-const init = (baseUrl: string, userAgent: string): void => {
+const init = (baseUrl: string, userAgent: string = 'DSpace NodeJs Client'): void => {
   internalBaseUrl = baseUrl // Store for use in specific cases like putUri
   apiClient = axios.create({
     baseURL: baseUrl,
@@ -157,7 +157,7 @@ const auth = {
    * Logs into DSpace. It tries DSpace 8+ CSRF mechanism first, then falls back to DSpace 7.
    * @param {string} user - The username.
    * @param {string} password - The password.
-   * @returns {Promise<LOGIN_RESULT>} The result of the login attempt.
+   * @returns {Promise<string>} The result of the login attempt.
    */
   login: async (user: string, password: string): Promise<string> => {
     /**

@@ -1,6 +1,6 @@
 import dspaceApi from './lib/dspace.api'
 import Payload from './utils/payload'
-import {readFileSync} from 'fs'
+import { readFileSync } from 'node:fs'
 import * as Types from './lib/dspace.types'
 
 // This allows users to access the API methods directly
@@ -34,7 +34,6 @@ export async function showAllItems() {
     }
   } catch (e: any) {
     console.error(`Error getting item: ${e.errorCode}`)
-    process.env.DEBUG && console.dir(e)
   }
 }
 
@@ -45,7 +44,6 @@ export async function showItem(itemId: string) {
     console.log(`URL: ${item._links.self.href}`)
   } catch (e: any) {
     console.error(`Error getting item with id: ${itemId}`)
-    process.env.DEBUG && console.dir(e)
   }
 }
 
@@ -55,7 +53,6 @@ export async function updateItem(itemId: string, payload: {}) {
     console.log(`${item.name} (handle: ${item.handle}, id: ${item.uuid}) updated`)
   } catch (e: any) {
     console.error(`Error updating item with id: ${itemId}`)
-    process.env.DEBUG && console.dir(e)
   }
 }
 
@@ -72,7 +69,6 @@ export async function showItemBundles(itemId: string, type?: string) {
     }
   } catch (e: any) {
     console.error(`Error getting bundles with item id: ${itemId}`)
-    process.env.DEBUG && console.dir(e)
   }
 }
 
@@ -87,7 +83,6 @@ export async function showBitstreams(bundleId: string) {
     })
   } catch (e: any) {
     console.error(`\tError getting bitstreams with bundle id: ${bundleId}`)
-    process.env.DEBUG && console.dir(e)
   }
 }
 
@@ -108,7 +103,6 @@ export async function newBitstream(itemId: string, name: string, filePath: strin
     }
   } catch (e: any) {
     console.error(`Create bitstream failed: ${e.errorCode}`)
-    process.env.DEBUG && console.dir(e)
   }
 
   async function getContentBundleId(itemId: string) {
@@ -120,7 +114,6 @@ export async function newBitstream(itemId: string, name: string, filePath: strin
       bundleId = bundle ? bundle.uuid : ''
     } catch (e: any) {
       console.error(`Error getting bundle ID: ${e.errorCode}`)
-      process.env.DEBUG && console.dir(e)
     }
     return bundleId
   }
@@ -132,7 +125,6 @@ export async function deleteBitstreams(bitstreamId: string) {
     console.log(`Bitstream deleted: ${bitstreamId}`)
   } catch (e: any) {
     console.error(`Delete bitstream (id: ${bitstreamId} failed: ${e.errorCode}`)
-    process.env.DEBUG && console.dir(e)
   }
 }
 
@@ -141,7 +133,6 @@ export async function deleteBitstreamsMulti(payload: any) {
     await dspaceApi.bitstreams.batchUpdate(payload)
   } catch (e: any) {
     console.error(`Delete bitstream failed: ${e.errorCode}`)
-    process.env.DEBUG && console.dir(e)
   }
 }
 
@@ -169,7 +160,6 @@ export async function deleteBitstreamsByItemId(itemId: string) {
     console.log(`Deleted bitstreams for itemId: ${itemId}`)
   } catch (e: any) {
     console.error(`Exception in deleting bitstreams for item: ${itemId}`)
-    process.env.DEBUG && console.dir(e)
   }
 }
 
@@ -179,7 +169,6 @@ export async function moveItem(itemId: string, colId: string) {
     console.log(`Item moved to collection: ${colId}`)
   } catch (e: any) {
     console.error(`Item move failed for itemId: ${itemId}`)
-    process.env.DEBUG && console.dir(e)
   }
 }
 
@@ -189,7 +178,6 @@ export async function deleteCollection(colId: string) {
     console.log(`Collection deleted: ${colId}`)
   } catch (e: any) {
     console.error(`Delete collection failed: ${e.errorCode}`)
-    process.env.DEBUG && console.dir(e)
   }
 }
 
@@ -199,7 +187,6 @@ export async function createCollection(comId: string, name: string) {
     console.log(`Collection created: ${name}`)
   } catch (e: any) {
     console.error(`Create collection failed: ${e.errorCode}`)
-    process.env.DEBUG && console.dir(e)
   }
 }
 
@@ -210,7 +197,6 @@ export async function showCollections() {
     console.log('----------------\nTop Communities\n----------------')
     for (const comm of commList) {
       console.log(`${comm.name} (id: ${comm.uuid})`)
-      // console.log(comm._links.self.href)
 
       const res2 = await dspaceApi.collections.byComId(comm.uuid)
       const colList = res2._embedded.collections
@@ -218,12 +204,10 @@ export async function showCollections() {
         console.log('\t=> Collections')
         colList.forEach(col => {
           console.log(`\t${col.name} (id: ${col.uuid})`)
-          // console.log(`\t${col._links.self.href}`)
         })
       }
     }
   } catch (e) {
     console.error('Error in getting collections')
-    process.env.DEBUG && console.dir(e)
   }
 }
