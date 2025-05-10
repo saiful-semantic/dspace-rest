@@ -20,7 +20,7 @@
   },
   "scripts": {
     "build": "tsup",
-    "test": "mocha --recursive --require ts-node/register"
+    "test": "mocha"
   },
   "dependencies": {
     "axios": "1.9.0",

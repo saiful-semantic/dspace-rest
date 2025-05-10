@@ -1,5 +1,12 @@
 {
   "extension": ["ts"],
   "spec": "src/**/*.spec.ts",
-  "require": "ts-node/register"
+  "node-option": [
+    "import=ts-node/register"
+  ],
+  "loader": "ts-node/esm",
+  "recursive": true,
+  "timeout": 2000,
+  "exit": true,
+  "color": true
 }
