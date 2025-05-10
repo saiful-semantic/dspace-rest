@@ -5,7 +5,7 @@ import path from 'path'
 export interface Config {
   api_url?: string
   verified?: boolean
-  serverInfo: {
+  serverInfo?: {
     dspaceUI?: string
     dspaceName?: string
     dspaceVersion?: string
@@ -22,7 +22,7 @@ export const configService = {
       fileOps.mkdirSync(CONFIG_DIR, { recursive: true })
       fileOps.writeFileSync(CONFIG_PATH, JSON.stringify({}, null, 2))
     }
-    return JSON.parse(fileOps.readFileSync(CONFIG_PATH, 'utf-8'))
+    return JSON.parse(fileOps.readFileSync(CONFIG_PATH, 'utf-8')) as Config
   },
 
   saveConfig: (config: Config) => {
