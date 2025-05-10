@@ -12,7 +12,6 @@
   },
   "files": [
     "dist",
-    "bin",
     "CHANGELOG.md",
     "README.md"
   ],
@@ -20,7 +19,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "rimraf dist && tsup src/index.ts src/cli/index.ts --dts --format esm,cjs --outDir dist",
+    "build": "tsup",
     "test": "mocha --recursive --require ts-node/register"
   },
   "dependencies": {
