@@ -1,8 +1,8 @@
 export interface ApiInfo {
-  dspaceUI: string,
-  dspaceName: string,
-  dspaceServer: string,
-  dspaceVersion : string,
+  dspaceUI: string
+  dspaceName: string
+  dspaceServer: string
+  dspaceVersion: string
   type: string
 }
 
@@ -12,13 +12,15 @@ export interface DspaceEntity {
   name: string
   handle: string
   metadata: {
-    [propName: string]: [{
-      value: string | number | Date,
-      language: string,
-      authority: string,
-      confidence: number,
-      place: number
-    }]
+    [propName: string]: [
+      {
+        value: string | number | Date
+        language: string
+        authority: string
+        confidence: number
+        place: number
+      }
+    ]
   }
   _links: {
     [propName: string]: {
@@ -39,10 +41,10 @@ export interface Community extends DspaceEntity {
 
 export interface Item extends DspaceEntity {
   type: 'item'
-  inArchive: boolean,
-  discoverable: boolean,
-  withdrawn: boolean,
-  lastModified: Date,
+  inArchive: boolean
+  discoverable: boolean
+  withdrawn: boolean
+  lastModified: Date
 }
 
 export interface Bitstream extends DspaceEntity {

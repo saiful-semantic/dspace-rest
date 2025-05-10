@@ -15,7 +15,7 @@ export const ENDPOINTS = {
   COLLECTIONS: `${CORE_PREFIX}/collections`,
   ITEMS: `${CORE_PREFIX}/items`,
   BUNDLES: `${CORE_PREFIX}/bundles`,
-  BITSTREAMS: `${CORE_PREFIX}/bitstreams`,
+  BITSTREAMS: `${CORE_PREFIX}/bitstreams`
 }
 
 // --- Login Result ---

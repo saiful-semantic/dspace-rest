@@ -14,7 +14,7 @@ export const authCommands = {
     const password = await promptService.prompt('Password:', true)
 
     try {
-      dspaceClient.init(config.api_url as string)
+      dspaceClient.init(config.api_url)
       await dspaceClient.login(username, password)
       authStore.set('credentials', { username, password })
       console.log('✅ Login successful! Credentials stored securely.')

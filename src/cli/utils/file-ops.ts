@@ -6,5 +6,5 @@ export const fileOps = {
   mkdirSync: fs.mkdirSync,
   writeFileSync: fs.writeFileSync,
   readFileSync: fs.readFileSync,
-  joinPath: path.join
+  joinPath: (...paths: string[]) => path.join(...paths)
 }

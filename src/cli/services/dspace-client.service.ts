@@ -19,8 +19,9 @@ export const dspaceClient = {
         console.log(`    ${item._links.self.href}`)
         // console.log(item.lastModified)
       }
-    } catch (e: any) {
-      console.error(`Error getting item: ${e.errorCode}`)
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      console.error(`Error getting item: ${errorMessage}`)
     }
   },
 
@@ -29,26 +30,30 @@ export const dspaceClient = {
       const item = await dspaceApi.items.byId(itemId)
       console.log(`${item.name} (handle: ${item.handle}, id: ${item.uuid})`)
       console.log(`URL: ${item._links.self.href}`)
-    } catch (e: any) {
+    } catch (error: unknown) {
       console.error(`Error getting item with id: ${itemId}`)
+      console.debug(error)
     }
   },
 
-  async updateItem(itemId: string, payload: {}): Promise<void> {
-    try {
-      const item = await dspaceApi.items.update(itemId, payload)
-      console.log(`${item.name} (handle: ${item.handle}, id: ${item.uuid}) updated`)
-    } catch (e: any) {
-      console.error(`Error updating item with id: ${itemId}`)
-    }
-  },
+  // TODO: Fix payload
+  // async updateItem(itemId: string, payload: object): Promise<void> {
+  //   try {
+  //     await dspaceApi.core.info()
+  //     // const item = await dspaceApi.items.update(itemId, payload)
+  //     // console.log(`${item.name} (handle: ${item.handle}, id: ${item.uuid}) updated`)
+  //   } catch (error: unknown) {
+  //     console.error(`Error updating item with id: ${itemId}`)
+  //   }
+  // },
 
   async moveItem(itemId: string, colId: string) {
     try {
       await dspaceApi.items.move(itemId, colId)
       console.log(`Item moved to collection: ${colId}`)
-    } catch (e: any) {
+    } catch (error: unknown) {
       console.error(`Item move failed for itemId: ${itemId}`)
+      console.debug(error)
     }
   },
 
@@ -56,28 +61,32 @@ export const dspaceClient = {
     try {
       const res = await dspaceApi.bundles.byItemId(itemId)
       const bundles = type
-        ? res._embedded.bundles.filter(bundle => bundle.name === type)
+        ? res._embedded.bundles.filter((bundle) => bundle.name === type)
         : res._embedded.bundles
       for (const bundle of bundles) {
         console.log(`${bundle.name} (Bundle id: ${bundle.uuid})`)
         console.log(`URL: ${bundle._links.self.href}`)
         await showBitstreams(bundle.uuid)
       }
-    } catch (e: any) {
+    } catch (error: unknown) {
       console.error(`Error getting bundles with item id: ${itemId}`)
+      console.debug(error)
     }
 
     async function showBitstreams(bundleId: string): Promise<void> {
       try {
         const res = await dspaceApi.bitstreams.byBundleId(bundleId)
         const bitstreams = res._embedded.bitstreams
-        bitstreams.forEach(bitstream => {
-          console.log(`\t${bitstream.name} (size: ${bitstream.sizeBytes}, Bitstream id: ${bitstream.uuid})`)
+        bitstreams.forEach((bitstream) => {
+          console.log(
+            `\t${bitstream.name} (size: ${bitstream.sizeBytes}, Bitstream id: ${bitstream.uuid})`
+          )
           console.log(`\tContent: ${bitstream._links.content.href}`)
           console.log(`\tThumbnail: ${bitstream._links.thumbnail.href}\n`)
         })
-      } catch (e: any) {
+      } catch (error: unknown) {
         console.error(`\tError getting bitstreams with bundle id: ${bundleId}`)
+        console.debug(error)
       }
     }
   },
@@ -97,8 +106,9 @@ export const dspaceClient = {
       } else {
         console.error(`Error in getting bundleId: ${itemId}`)
       }
-    } catch (e: any) {
-      console.error(`Create bitstream failed: ${e.errorCode}`)
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      console.error(`Create bitstream failed: ${errorMessage}`)
     }
 
     async function getContentBundleId(itemId: string) {
@@ -106,10 +116,11 @@ export const dspaceClient = {
       try {
         const res = await dspaceApi.bundles.byItemId(itemId)
         // const bundles = res._embedded.bundles.find(bundle => bundle.name === 'ORIGINAL')
-        const bundle = res._embedded.bundles.find(bundle => bundle.name === 'ORIGINAL')
+        const bundle = res._embedded.bundles.find((bundle) => bundle.name === 'ORIGINAL')
         bundleId = bundle ? bundle.uuid : ''
-      } catch (e: any) {
-        console.error(`Error getting bundle ID: ${e.errorCode}`)
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        console.error(`Error getting bundle ID: ${errorMessage}`)
       }
       return bundleId
     }
@@ -119,23 +130,26 @@ export const dspaceClient = {
     try {
       await dspaceApi.bitstreams.deleteById(bitstreamId)
       console.log(`Bitstream deleted: ${bitstreamId}`)
-    } catch (e: any) {
-      console.error(`Delete bitstream (id: ${bitstreamId} failed: ${e.errorCode}`)
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      console.error(`Delete bitstream (id: ${bitstreamId} failed: ${errorMessage}`)
     }
   },
 
-  async deleteBitstreamsMulti(payload: any) {
-    try {
-      await dspaceApi.bitstreams.batchUpdate(payload)
-    } catch (e: any) {
-      console.error(`Delete bitstream failed: ${e.errorCode}`)
-    }
-  },
+  // TODO: Fix payload
+  // async deleteBitstreamsMulti(payload: object) {
+  //   try {
+  //     await dspaceApi.bitstreams.batchUpdate(payload)
+  //   } catch (error: unknown) {
+  //     const errorMessage = error instanceof Error ? error.message : String(error)
+  //     console.error(`Delete bitstream failed: ${errorMessage}`)
+  //   }
+  // },
 
   async deleteBitstreamsByItemId(itemId: string) {
     try {
       const res = await dspaceApi.bundles.byItemId(itemId)
-      const bundles = res._embedded.bundles.filter(bundle => bundle.name !== 'LICENSE')
+      const bundles = res._embedded.bundles.filter((bundle) => bundle.name !== 'LICENSE')
       for (const bundle of bundles) {
         const bundleId = bundle.uuid
         if (bundleId.length) {
@@ -154,8 +168,9 @@ export const dspaceClient = {
         }
       }
       console.log(`Deleted bitstreams for itemId: ${itemId}`)
-    } catch (e: any) {
-      console.error(`Exception in deleting bitstreams for item: ${itemId}`)
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      console.error(`Exception in deleting bitstreams for item: ${errorMessage}`)
     }
   },
 
@@ -163,8 +178,9 @@ export const dspaceClient = {
     try {
       await dspaceApi.collections.deleteById(colId)
       console.log(`Collection deleted: ${colId}`)
-    } catch (e: any) {
-      console.error(`Delete collection failed: ${e.errorCode}`)
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      console.error(`Delete collection failed: ${errorMessage}`)
     }
   },
 
@@ -172,8 +188,9 @@ export const dspaceClient = {
     try {
       await dspaceApi.collections.create(comId, Payload.Collection(name))
       console.log(`Collection created: ${name}`)
-    } catch (e: any) {
-      console.error(`Create collection failed: ${e.errorCode}`)
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      console.error(`Create collection failed: ${errorMessage}`)
     }
   },
 
@@ -189,13 +206,14 @@ export const dspaceClient = {
         const colList = res2._embedded.collections
         if (colList.length) {
           console.log('\t=> Collections')
-          colList.forEach(col => {
+          colList.forEach((col) => {
             console.log(`\t${col.name} (id: ${col.uuid})`)
           })
         }
       }
-    } catch (e) {
+    } catch (error: unknown) {
       console.error('Error in getting collections')
+      console.debug(error)
     }
   },
 
@@ -205,12 +223,12 @@ export const dspaceClient = {
       throw new Error('Set the URL first with config:set <REST_API_URL>')
     }
 
-    this.init(config.api_url as string)
+    this.init(config.api_url)
 
-    const credentials = authStore.get('credentials')
+    const credentials = authStore.get<{ username: string; password: string }>('credentials')
     if (!credentials) {
       throw new Error('No saved credentials. Run "dspace-cli login" first.')
     }
-    await this.login(credentials.username, credentials.password)
+    await this.login(String(credentials.username), String(credentials.password))
   }
 }

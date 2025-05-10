@@ -48,10 +48,12 @@ describe('CLI: Auth Commands', () => {
     assert.ok(dspaceLoginStub.calledWith('testuser', 'testpass'))
 
     // Verify auth storage
-    assert.ok(authSetStub.calledWith('credentials', {
-      username: 'testuser',
-      password: 'testpass'
-    }))
+    assert.ok(
+      authSetStub.calledWith('credentials', {
+        username: 'testuser',
+        password: 'testpass'
+      })
+    )
 
     // Verify success message
     assert.ok(consoleLogStub.calledWith('✅ Login successful! Credentials stored securely.'))
@@ -65,10 +67,7 @@ describe('CLI: Auth Commands', () => {
     // Setup failed login
     dspaceLoginStub.rejects(new Error('Invalid credentials'))
 
-    await assert.rejects(
-      () => authCommands.login(),
-      /Login failed: Invalid credentials/
-    )
+    await assert.rejects(() => authCommands.login(), /Login failed: Invalid credentials/)
 
     // Verify auth storage wasn't called
     assert.ok(authSetStub.notCalled)
@@ -77,12 +76,9 @@ describe('CLI: Auth Commands', () => {
   it('should throw error if REST API URL is not configured', async () => {
     configStub.returns({}) // No api_url in config
 
-    await assert.rejects(
-      () => authCommands.login(),
-      {
-        name: 'Error',
-        message: `Set the URL first with 'config:set <REST_API_URL>'`
-      }
-    )
+    await assert.rejects(() => authCommands.login(), {
+      name: 'Error',
+      message: `Set the URL first with 'config:set <REST_API_URL>'`
+    })
   })
 })

@@ -1,6 +1,6 @@
 import { strict as assert } from 'assert'
 import sinon from 'sinon'
-import { configService } from './config.service'
+import { Config, configService } from './config.service'
 import { fileOps } from '../utils/file-ops'
 import os from 'os'
 import path from 'path'
@@ -26,7 +26,8 @@ describe('CLI: Config Service', () => {
 
   it('should load config if file exists', () => {
     existsSyncStub.withArgs(CONFIG_PATH).returns(true)
-    readFileSyncStub.withArgs(CONFIG_PATH, 'utf-8')
+    readFileSyncStub
+      .withArgs(CONFIG_PATH, 'utf-8')
       .returns('{"api_url":"https://example.com","serverInfo":{"dspaceVersion":"7.6"}}')
     const config = configService.loadConfig()
     assert.deepEqual(config, {
@@ -48,7 +49,7 @@ describe('CLI: Config Service', () => {
   })
 
   it('should save config with nested serverInfo', () => {
-    const config: any = {
+    const config: Config = {
       api_url: 'https://example.edu/server',
       verified: false,
       serverInfo: {
@@ -57,22 +58,16 @@ describe('CLI: Config Service', () => {
       }
     }
     configService.saveConfig(config)
-    assert.ok(writeFileSyncStub.calledWith(
-      CONFIG_PATH,
-      JSON.stringify(config, null, 2)
-    ))
+    assert.ok(writeFileSyncStub.calledWith(CONFIG_PATH, JSON.stringify(config, null, 2)))
   })
 
   it('should handle empty serverInfo', () => {
-    const config: any = {
+    const config: Config = {
       api_url: 'https://example.edu/server',
       verified: true,
       serverInfo: {}
     }
     configService.saveConfig(config)
-    assert.ok(writeFileSyncStub.calledWith(
-      CONFIG_PATH,
-      JSON.stringify(config, null, 2)
-    ))
+    assert.ok(writeFileSyncStub.calledWith(CONFIG_PATH, JSON.stringify(config, null, 2)))
   })
 })

@@ -1,7 +1,7 @@
 import { strict as assert } from 'assert'
 import sinon from 'sinon'
 import { configCommands } from './config'
-import { configService } from '../services/config.service'
+import { Config, configService } from '../services/config.service'
 import { dspaceClient } from '../services/dspace-client.service'
 
 describe('CLI: Config Commands', () => {
@@ -28,11 +28,11 @@ describe('CLI: Config Commands', () => {
   })
 
   describe('config:set', () => {
-    it('should set api_url and mark as unverified', async () => {
-      const config: any = { serverInfo: {} }
+    it('should set api_url and mark as unverified', () => {
+      const config: Config = { serverInfo: {} }
       loadConfigStub.returns(config)
 
-      await configCommands.set('https://example.edu/server')
+      configCommands.set('https://example.edu/server')
 
       assert.equal(config.api_url, 'https://example.edu/server')
       assert.equal(config.verified, false)
@@ -42,7 +42,7 @@ describe('CLI: Config Commands', () => {
   })
 
   describe('config:reset', () => {
-    it('should reset the configuration to empty object', async () => {
+    it('should reset the configuration to empty object', () => {
       const config = {
         api_url: 'https://example.edu/server',
         verified: true,
@@ -52,7 +52,7 @@ describe('CLI: Config Commands', () => {
       }
       loadConfigStub.returns(config)
 
-      await configCommands.reset()
+      configCommands.reset()
 
       assert.ok(saveConfigStub.calledWith({}))
       assert.ok(consoleLogStub.calledWith('✅ Reset api_url'))
@@ -61,7 +61,7 @@ describe('CLI: Config Commands', () => {
 
   describe('config:verify', () => {
     it('should successfully verify and update server info', async () => {
-      const config: any = {
+      const config: Config = {
         api_url: 'https://example.edu/server',
         verified: false,
         serverInfo: {}
@@ -75,16 +75,16 @@ describe('CLI: Config Commands', () => {
       loadConfigStub.returns(config)
       dspaceInfoStub.resolves(mockInfo)
 
-      await configCommands.verify()
-      await new Promise(process.nextTick) // Wait for promise
+      configCommands.verify()
+      await new Promise((resolve) => process.nextTick(resolve)) // Wait for promise
 
       assert.ok(dspaceInitStub.calledWith('https://example.edu/server'))
       assert.equal(config.api_url, mockInfo.dspaceServer)
       assert.equal(config.verified, true)
-      assert.equal(config.serverInfo.dspaceUI, mockInfo.dspaceUI)
-      assert.equal(config.serverInfo.dspaceName, mockInfo.dspaceName)
-      assert.equal(config.serverInfo.dspaceVersion, mockInfo.dspaceVersion)
-      assert.equal(config.serverInfo.dspaceServer, mockInfo.dspaceServer)
+      assert.equal(config.serverInfo!.dspaceUI, mockInfo.dspaceUI)
+      assert.equal(config.serverInfo!.dspaceName, mockInfo.dspaceName)
+      assert.equal(config.serverInfo!.dspaceVersion, mockInfo.dspaceVersion)
+      assert.equal(config.serverInfo!.dspaceServer, mockInfo.dspaceServer)
       assert.ok(consoleLogStub.calledWith('✅ Server is reachable. Configuration updated.'))
     })
 
@@ -97,16 +97,17 @@ describe('CLI: Config Commands', () => {
       loadConfigStub.returns(config)
       dspaceInfoStub.rejects(error)
 
-      await configCommands.verify()
-      await new Promise(process.nextTick)
+      configCommands.verify()
 
-      assert.ok(consoleErrorStub.calledWith(`❌ Server not reachable: ${error.message}`))
-      assert.ok(saveConfigStub.notCalled)
+      // Wait for all promises to resolve
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      sinon.assert.calledWith(consoleErrorStub, `❌ Server not reachable: ${error.message}`)
+      sinon.assert.notCalled(saveConfigStub)
     })
   })
 
   describe('config:show', () => {
-    it('should display current configuration', async () => {
+    it('should display current configuration', () => {
       const config = {
         api_url: 'https://example.edu/server',
         verified: true,
@@ -116,7 +117,7 @@ describe('CLI: Config Commands', () => {
       }
       loadConfigStub.returns(config)
 
-      await configCommands.show()
+      configCommands.show()
 
       assert.ok(consoleLogStub.calledWith('Current configuration:'))
       assert.ok(consoleDirStub.calledWith(config))

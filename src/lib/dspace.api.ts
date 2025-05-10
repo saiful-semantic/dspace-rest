@@ -1,15 +1,25 @@
-import axios, {AxiosError, AxiosResponse, AxiosInstance, InternalAxiosRequestConfig} from 'axios'
+import axios, { AxiosError, AxiosResponse, AxiosInstance, InternalAxiosRequestConfig } from 'axios'
 import qs from 'node:querystring'
 import {
-  Communities, SubCommunities, Collection, Collections, Community,
-  Item, Items, Bundle, Bundles, Bitstream, Bitstreams, ApiInfo
+  Communities,
+  SubCommunities,
+  Collection,
+  Collections,
+  Community,
+  Item,
+  Items,
+  Bundle,
+  Bundles,
+  Bitstream,
+  Bitstreams,
+  ApiInfo
 } from './dspace.types'
-import {LOGIN_RESULT, ENDPOINTS} from '../constants'
+import { LOGIN_RESULT, ENDPOINTS } from '../constants'
 
 // Define a more specific type for payloads if possible, or use a generic
 // For now, we'll keep it as Record<string, any> for flexibility, but ideally,
 // each function would define its expected payload type.
-type Payload = Record<string, any>
+type Payload = Record<string, unknown>
 
 // --- Custom Error Class ---
 /**
@@ -17,9 +27,9 @@ type Payload = Record<string, any>
  */
 export class DSpaceApiError extends Error {
   public readonly status?: number
-  public readonly data?: any
+  public readonly data?: unknown
 
-  constructor(message: string, status?: number, data?: any) {
+  constructor(message: string, status?: number, data?: unknown) {
     super(message)
     this.name = 'DSpaceApiError'
     this.status = status
@@ -43,9 +53,9 @@ const init = (baseUrl: string, userAgent: string = 'DSpace NodeJs Client'): void
   apiClient = axios.create({
     baseURL: baseUrl,
     headers: {
-      'User-Agent': userAgent,
+      'User-Agent': userAgent
     },
-    withCredentials: true, // Ensures cookies are sent with requests
+    withCredentials: true // Ensures cookies are sent with requests
   })
 
   // Request interceptor
@@ -64,7 +74,7 @@ const init = (baseUrl: string, userAgent: string = 'DSpace NodeJs Client'): void
       const response = error.response
       let errorMessage: string
       let errorStatus: number | undefined
-      let errorData: any = null
+      let errorData: unknown = null
 
       if (response) {
         errorStatus = response.status
@@ -72,34 +82,26 @@ const init = (baseUrl: string, userAgent: string = 'DSpace NodeJs Client'): void
         switch (errorStatus) {
           case 400:
             errorMessage = `Bad Request: ${JSON.stringify(errorData)}`
-            console.error('DSpace API Error (400 - Bad Request):', errorData)
             break
           case 401:
             errorMessage = 'Unauthorized. Please check your credentials or session.'
-            console.error('DSpace API Error (401 - Unauthorized)')
             break
           case 403:
             errorMessage = 'Forbidden. You do not have permission to access this resource.'
-            console.error('DSpace API Error (403 - Forbidden)')
             break
           case 404:
             errorMessage = 'Resource Not Found.'
-            console.error('DSpace API Error (404 - Not Found)')
             break
           case 500:
             errorMessage = 'Internal Server Error. Please try again later.'
-            console.error('DSpace API Error (500 - Server Error)')
             break
           default:
             errorMessage = `Error ${errorStatus}: ${JSON.stringify(errorData)}`
-            console.error(`DSpace API Error (${errorStatus}):`, errorData)
         }
       } else if (error.request) {
         errorMessage = 'No response received from server. Check network connection.'
-        console.error('DSpace API Error (No Response):', error.request)
       } else {
         errorMessage = `Request setup error: ${error.message}`
-        console.error('DSpace API Error (Request Setup):', error.message)
       }
       return Promise.reject(new DSpaceApiError(errorMessage, errorStatus, errorData))
     }
@@ -119,25 +121,29 @@ const request = {
   patch: <T>(url: string, body: Payload, config?: InternalAxiosRequestConfig) =>
     apiClient.patch<T>(url, body, config).then(responseBody),
   postForm: <T>(url: string, body: FormData | Payload, config?: InternalAxiosRequestConfig) =>
-    apiClient.post<T>(url, body, {
-      ...config,
-      headers: {
-        ...config?.headers,
-        'Content-Type': 'multipart/form-data',
-      },
-    }).then(responseBody),
+    apiClient
+      .post<T>(url, body, {
+        ...config,
+        headers: {
+          ...config?.headers,
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+      .then(responseBody),
   put: <T>(url: string, body: Payload, config?: InternalAxiosRequestConfig) =>
     apiClient.put<T>(url, body, config).then(responseBody),
   putUri: <T>(url: string, uri: string, config?: InternalAxiosRequestConfig) =>
-    apiClient.put<T>(url, uri, {
-      ...config,
-      headers: {
-        ...config?.headers,
-        'Content-Type': 'text/uri-list',
-      },
-    }).then(responseBody),
+    apiClient
+      .put<T>(url, uri, {
+        ...config,
+        headers: {
+          ...config?.headers,
+          'Content-Type': 'text/uri-list'
+        }
+      })
+      .then(responseBody),
   delete: <T>(url: string, config?: InternalAxiosRequestConfig) =>
-    apiClient.delete<T>(url, config).then(responseBody),
+    apiClient.delete<T>(url, config).then(responseBody)
 }
 
 const core = {
@@ -165,26 +171,31 @@ const auth = {
      */
     const tryLoginStrategy = async (csrfUrl: string, versionLabel: string): Promise<string> => {
       const csrfRes = await apiClient.get(csrfUrl)
-      const csrfToken = csrfRes.headers['dspace-xsrf-token'] || csrfRes.headers['xsrf-token']
+      const csrfToken =
+        (csrfRes.headers['dspace-xsrf-token'] as string | undefined) ||
+        (csrfRes.headers['xsrf-token'] as string | undefined)
 
       if (!csrfToken) {
-        console.warn(`Missing CSRF token in headers for ${versionLabel}. Relying on cookie if set.`)
+        return Promise.reject(
+          new DSpaceApiError(
+            `Missing CSRF token in headers for ${versionLabel}. Relying on cookie if set.`,
+            500,
+            csrfRes
+          )
+        )
       }
 
-      const loginRes = await apiClient.post(
-        ENDPOINTS.LOGIN,
-        qs.stringify({user, password}),
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            ...(csrfToken && {'X-XSRF-Token': csrfToken}),
-            Cookie: `DSPACE-XSRF-COOKIE=${csrfToken}`
-          },
+      const loginRes = await apiClient.post(ENDPOINTS.LOGIN, qs.stringify({ user, password }), {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          ...(csrfToken && { 'X-XSRF-Token': csrfToken }),
+          Cookie: `DSPACE-XSRF-COOKIE=${csrfToken}`
         }
-      )
+      })
 
       if (loginRes.headers.authorization) {
-        apiClient.defaults.headers.common['Authorization'] = loginRes.headers.authorization
+        apiClient.defaults.headers.common['Authorization'] = loginRes.headers
+          .authorization as string
       }
       if (csrfToken) {
         apiClient.defaults.headers.common['X-XSRF-Token'] = csrfToken
@@ -194,13 +205,13 @@ const auth = {
 
     try {
       return await tryLoginStrategy(ENDPOINTS.CSRF_DSPACE8, 'DSpace 8+')
-    } catch (e8: any) {
+    } catch {
       delete apiClient.defaults.headers.common['Authorization']
       delete apiClient.defaults.headers.common['X-XSRF-Token']
 
       try {
         return await tryLoginStrategy(ENDPOINTS.CSRF_DSPACE7, 'DSpace 7')
-      } catch (e7: any) {
+      } catch {
         return LOGIN_RESULT.FAILURE
       }
     }
@@ -215,11 +226,10 @@ const auth = {
       await apiClient.post(ENDPOINTS.LOGOUT)
       delete apiClient.defaults.headers.common['Authorization']
       delete apiClient.defaults.headers.common['X-XSRF-Token']
-    } catch (error: any) {
-      console.error('Logout failed:', error instanceof DSpaceApiError ? error.message : error)
+    } catch (error: unknown) {
       delete apiClient.defaults.headers.common['Authorization']
       delete apiClient.defaults.headers.common['X-XSRF-Token']
-      throw new DSpaceApiError('Logout failed', error.status, error.data)
+      throw new DSpaceApiError('Logout failed', 400, error)
     }
   },
 
@@ -227,18 +237,16 @@ const auth = {
    * Checks the current authentication status.
    * @returns {Promise<any>} The status response.
    */
-  status: async (): Promise<any> => {
-    try {
-      const response = await apiClient.get(ENDPOINTS.STATUS)
-      const csrfToken = response.headers['dspace-xsrf-token'] || response.headers['xsrf-token']
-      if (csrfToken && apiClient?.defaults?.headers?.common) { // Ensure apiClient and headers are defined
-        apiClient.defaults.headers.common['X-XSRF-Token'] = csrfToken
-      }
-      return response.data
-    } catch (error: any) {
-      console.error('Failed to get authentication status:', error instanceof DSpaceApiError ? error.message : error)
-      throw error
+  status: async (): Promise<unknown> => {
+    const response = await apiClient.get(ENDPOINTS.STATUS)
+    const csrfToken =
+      (response.headers['dspace-xsrf-token'] as string | undefined) ||
+      (response.headers['xsrf-token'] as string | undefined)
+    if (csrfToken && apiClient?.defaults?.headers?.common) {
+      // Ensure apiClient and headers are defined
+      apiClient.defaults.headers.common['X-XSRF-Token'] = csrfToken
     }
+    return response.data
   }
 }
 
@@ -259,7 +267,9 @@ const communities = {
    * @param {string} comId - The community UUID.
    * @returns {Promise<Community>} Assuming the API returns a single Community object. Adjust if it's wrapped.
    */
-  byId: (comId: string): Promise<Community> => // Changed to Promise<Community> for a single entity
+  byId: (
+    comId: string
+  ): Promise<Community> => // Changed to Promise<Community> for a single entity
     request.get<Community>(`${ENDPOINTS.COMMUNITIES}/${comId}`),
 
   /**
@@ -279,7 +289,9 @@ const communities = {
    * @returns {Promise<SubCommunities>}
    */
   subById: (comId: string, size: number = 100, page: number = 0): Promise<SubCommunities> =>
-    request.get<SubCommunities>(`${ENDPOINTS.COMMUNITIES}/${comId}/subcommunities?size=${size}&page=${page}`),
+    request.get<SubCommunities>(
+      `${ENDPOINTS.COMMUNITIES}/${comId}/subcommunities?size=${size}&page=${page}`
+    ),
 
   /**
    * Creates a new community.
@@ -309,8 +321,11 @@ const communities = {
    * @param {Payload} payload - The update operations (e.g., using JSON Patch).
    * @returns {Promise<Community>} The updated community.
    */
-  update: (comId: string, payload: Payload): Promise<Community> => // Typically uses PATCH
-    request.patch<Community>(`${ENDPOINTS.COMMUNITIES}/${comId}`, payload),
+  update: (
+    comId: string,
+    payload: Payload
+  ): Promise<Community> => // Typically uses PATCH
+    request.patch<Community>(`${ENDPOINTS.COMMUNITIES}/${comId}`, payload)
 }
 
 const collections = {
@@ -339,7 +354,9 @@ const collections = {
    * @returns {Promise<Collections>}
    */
   byComId: (comId: string, size: number = 10, page: number = 0): Promise<Collections> =>
-    request.get<Collections>(`${ENDPOINTS.COMMUNITIES}/${comId}/collections?size=${size}&page=${page}`),
+    request.get<Collections>(
+      `${ENDPOINTS.COMMUNITIES}/${comId}/collections?size=${size}&page=${page}`
+    ),
 
   /**
    * Creates a new collection within a community.
@@ -366,7 +383,7 @@ const collections = {
    * @returns {Promise<Collection>} The updated collection.
    */
   update: (colId: string, payload: Payload): Promise<Collection> =>
-    request.patch<Collection>(`${ENDPOINTS.COLLECTIONS}/${colId}`, payload),
+    request.patch<Collection>(`${ENDPOINTS.COLLECTIONS}/${colId}`, payload)
 }
 
 const items = {
@@ -384,8 +401,7 @@ const items = {
    * @param {string} itemId - The item UUID.
    * @returns {Promise<Item>}
    */
-  byId: (itemId: string): Promise<Item> =>
-    request.get<Item>(`${ENDPOINTS.ITEMS}/${itemId}`),
+  byId: (itemId: string): Promise<Item> => request.get<Item>(`${ENDPOINTS.ITEMS}/${itemId}`),
 
   /**
    * Creates an item within a collection.
@@ -402,7 +418,10 @@ const items = {
    * @param {Payload} payload - JSON Patch operations array for metadata updates.
    * @returns {Promise<Item>}
    */
-  update: (itemId: string, payload: Payload): Promise<Item> => // Typically metadata updates via PATCH
+  update: (
+    itemId: string,
+    payload: Payload
+  ): Promise<Item> => // Typically metadata updates via PATCH
     request.patch<Item>(`${ENDPOINTS.ITEMS}/${itemId}`, payload),
 
   /**
@@ -420,8 +439,10 @@ const items = {
    * @returns {Promise<void>}
    */
   move: (itemId: string, targetColId: string): Promise<void> =>
-    request.putUri<void>(`${ENDPOINTS.ITEMS}/${itemId}/owningCollection`,
-      `${internalBaseUrl}${ENDPOINTS.COLLECTIONS}/${targetColId}`), // Ensure internalBaseUrl is used
+    request.putUri<void>(
+      `${ENDPOINTS.ITEMS}/${itemId}/owningCollection`,
+      `${internalBaseUrl}${ENDPOINTS.COLLECTIONS}/${targetColId}`
+    ) // Ensure internalBaseUrl is used
 }
 
 const bundles = {
@@ -458,7 +479,7 @@ const bundles = {
    * @returns {Promise<void>}
    */
   deleteById: (bundleId: string): Promise<void> =>
-    request.delete<void>(`${ENDPOINTS.BUNDLES}/${bundleId}`),
+    request.delete<void>(`${ENDPOINTS.BUNDLES}/${bundleId}`)
 }
 
 const bitstreams = {
@@ -477,7 +498,9 @@ const bitstreams = {
    * @returns {Promise<Bitstreams>}
    */
   byBundleId: (bundleId: string, size: number = 20, page: number = 0): Promise<Bitstreams> =>
-    request.get<Bitstreams>(`${ENDPOINTS.BUNDLES}/${bundleId}/bitstreams?size=${size}&page=${page}`),
+    request.get<Bitstreams>(
+      `${ENDPOINTS.BUNDLES}/${bundleId}/bitstreams?size=${size}&page=${page}`
+    ),
 
   /**
    * Uploads/creates a new bitstream within a bundle.
@@ -510,8 +533,11 @@ const bitstreams = {
    * @returns {Promise<ArrayBuffer>} Or Blob, depending on how you want to handle the data.
    */
   retrieve: (bitstreamId: string): Promise<ArrayBuffer> =>
-    apiClient.get<ArrayBuffer>(`${ENDPOINTS.BITSTREAMS}/${bitstreamId}/retrieve`, {responseType: 'arraybuffer'}).then(responseBody),
-
+    apiClient
+      .get<ArrayBuffer>(`${ENDPOINTS.BITSTREAMS}/${bitstreamId}/retrieve`, {
+        responseType: 'arraybuffer'
+      })
+      .then(responseBody),
 
   /**
    * Updates bitstream metadata.
@@ -522,7 +548,6 @@ const bitstreams = {
   updateMetadata: (bitstreamId: string, payload: Payload): Promise<Bitstream> =>
     request.patch<Bitstream>(`${ENDPOINTS.BITSTREAMS}/${bitstreamId}`, payload),
 
-
   /**
    * DSpace 7.x supports a PATCH request to /api/core/bitstreams to perform batch operations like deletions.
    * The payload format is specific, often involving JSON Patch-like structures.
@@ -531,8 +556,8 @@ const bitstreams = {
    * @param {Payload} payload - The batch operation payload.
    * @returns {Promise<any>} Response might vary based on operations.
    */
-  batchUpdate: (payload: Payload): Promise<any> => // Renamed from multiDelete for clarity
-    request.patch<any>(ENDPOINTS.BITSTREAMS, payload),
+  batchUpdate: (payload: Payload): Promise<unknown> =>
+    request.patch<unknown>(ENDPOINTS.BITSTREAMS, payload)
 }
 
 // --- Main API Object ---
@@ -558,7 +583,7 @@ const dspaceApi = {
   /**
    * Provides direct access to request methods if needed.
    */
-  request,
+  request
 }
 
 export default dspaceApi

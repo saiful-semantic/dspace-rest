@@ -23,19 +23,13 @@ describe('CLI: DSpace Client Service', () => {
 
   it('should throw if api_url is not set', async () => {
     configStub.returns({})
-    await assert.rejects(
-      () => dspaceClient.ensureAuth(),
-      /Set the URL first/
-    )
+    await assert.rejects(() => dspaceClient.ensureAuth(), /Set the URL first/)
   })
 
   it('should throw if credentials are missing', async () => {
     configStub.returns({ api_url: 'http://test' })
     authGetStub.withArgs('credentials').returns(undefined)
-    await assert.rejects(
-      () => dspaceClient.ensureAuth(),
-      /No saved credentials/
-    )
+    await assert.rejects(() => dspaceClient.ensureAuth(), /No saved credentials/)
   })
 
   it('should call init and login with credentials', async () => {
