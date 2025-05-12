@@ -93,7 +93,6 @@ describe('DSpace API Bitstreams Module Tests', () => {
 
     const result = await dspaceApiMain.bitstreams.retrieve('test-bitstream-id')
     deepEqual(result, mockArrayBuffer)
-    // Corrected endpoint to /content based on dspace.api.ts
     sinon.assert.calledWith(getStub, `${ENDPOINTS.BITSTREAMS}/test-bitstream-id/content`, {
       responseType: 'arraybuffer'
     })
