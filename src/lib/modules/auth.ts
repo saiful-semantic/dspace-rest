@@ -35,7 +35,8 @@ export const authFunctions = {
       })
 
       if (loginRes.headers.authorization) {
-        apiClient.defaults.headers.common['Authorization'] = loginRes.headers.authorization as string
+        apiClient.defaults.headers.common['Authorization'] = loginRes.headers
+          .authorization as string
       }
       if (csrfToken) {
         apiClient.defaults.headers.common['X-XSRF-Token'] = csrfToken
