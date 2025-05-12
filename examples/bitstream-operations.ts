@@ -10,8 +10,8 @@ import {readFileSync} from 'fs'
 async function main() {
   dspaceApi.init('http://localhost:8080/server')
 
-  dspaceApi.auth.login('admin', 'admin').then(async (loginResponse: string) => {
-    if (loginResponse === 'login success') {
+  dspaceApi.auth.login('admin', 'admin').then(async (loginResponse: boolean) => {
+    if (loginResponse) {
       await showBitstreams('bundle-id')
     }
   })
