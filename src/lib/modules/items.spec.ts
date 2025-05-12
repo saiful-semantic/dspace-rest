@@ -27,16 +27,15 @@ describe('DSpace API Items Module Tests', () => {
     sinon.assert.calledWith(getStub, `${ENDPOINTS.ITEMS}/test-item`)
   })
 
-  // TODO: Fix the payload, depends on actual metadata structure and JSON patch ops
-  // it('should update item', async () => {
-  //   const mockUpdatedItem = { id: 'test-item', name: 'Updated Name' }
-  //   const payload = [{ op: 'replace', path: '/metadata/dc.title/0/value', value: 'Updated Name' }]
-  //   const patchStub = sinon.stub(client, 'patch').resolves({ data: mockUpdatedItem })
-  //
-  //   const result = await dspaceApiMain.items.update('test-item', payload)
-  //   deepEqual(result, mockUpdatedItem)
-  //   sinon.assert.calledWith(patchStub, `${ENDPOINTS.ITEMS}/test-item`, payload)
-  // })
+  it('should update item', async () => {
+    const mockUpdatedItem = { id: 'test-item', name: 'Updated Title' }
+    const payload = [{ op: 'replace', path: '/metadata/dc.title/0/value', value: 'Updated Title' }]
+    const patchStub = sinon.stub(client, 'patch').resolves({ data: mockUpdatedItem })
+
+    const result = await dspaceApiMain.items.update('test-item', payload)
+    deepEqual(result, mockUpdatedItem)
+    sinon.assert.calledWith(patchStub, `${ENDPOINTS.ITEMS}/test-item`, payload)
+  })
 
   it('should get all items with specified size and default page', async () => {
     const mockItems = { _embedded: { items: [{ id: 'item-1' }] } }

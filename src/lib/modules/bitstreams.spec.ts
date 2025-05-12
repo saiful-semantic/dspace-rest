@@ -73,19 +73,16 @@ describe('DSpace API Bitstreams Module Tests', () => {
     sinon.assert.calledWith(deleteStub, `${ENDPOINTS.BITSTREAMS}/test-bitstream-id`)
   })
 
-  // TODO: Fix the payload, structure depends on DSpace version for batch ops
-  // it('should perform batch update on bitstreams (e.g. multiple delete)', async () => {
-  //   const payload = [
-  //     { op: 'remove', path: '/bitstreams/id1' },
-  //     { op: 'remove', path: '/bitstreams/id2' }
-  //   ]
-  //   const patchStub = sinon
-  //     .stub(client, 'patch')
-  //     .resolves({ data: { status: 'success' } })
-  //
-  //   await dspaceApiMain.bitstreams.batchUpdate(payload)
-  //   sinon.assert.calledWith(patchStub, ENDPOINTS.BITSTREAMS, payload)
-  // })
+  it('should perform batch update on bitstreams (e.g. multiple delete)', async () => {
+    const payload = [
+      { op: 'remove', path: '/bitstreams/id1' },
+      { op: 'remove', path: '/bitstreams/id2' }
+    ]
+    const patchStub = sinon.stub(client, 'patch').resolves({ data: { status: 'success' } })
+
+    await dspaceApiMain.bitstreams.batchUpdate(payload)
+    sinon.assert.calledWith(patchStub, ENDPOINTS.BITSTREAMS, payload)
+  })
 
   it('should retrieve bitstream content', async () => {
     const mockArrayBuffer = new ArrayBuffer(8)
