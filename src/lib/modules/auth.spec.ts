@@ -3,7 +3,7 @@ import sinon from 'sinon'
 import { AxiosInstance } from 'axios'
 import dspaceApiMain from '../../index'
 import { DSpaceApiError } from '../client'
-import { LOGIN_RESULT, ENDPOINTS } from '../../constants'
+import { ENDPOINTS } from '../../constants'
 
 describe('DSpace API Auth Module Tests', () => {
   const baseUrl = 'https://example.edu/server'
@@ -33,7 +33,7 @@ describe('DSpace API Auth Module Tests', () => {
       .resolves({ headers: { authorization: 'Bearer test-token' }, data: {} })
 
     const result = await dspaceApiMain.auth.login('testuser', 'password')
-    equal(result, LOGIN_RESULT.SUCCESS)
+    equal(result, true)
     equal(client.defaults.headers.common['Authorization'], 'Bearer test-token')
     equal(client.defaults.headers.common['X-XSRF-Token'], 'csrf-token-8')
 
@@ -56,7 +56,7 @@ describe('DSpace API Auth Module Tests', () => {
       .resolves({ headers: { authorization: 'Bearer test-token-7' }, data: {} })
 
     const result = await dspaceApiMain.auth.login('testuser', 'password')
-    equal(result, LOGIN_RESULT.SUCCESS)
+    equal(result, true)
     equal(client.defaults.headers.common['Authorization'], 'Bearer test-token-7')
     equal(client.defaults.headers.common['X-XSRF-Token'], 'csrf-token-7')
 
@@ -76,7 +76,7 @@ describe('DSpace API Auth Module Tests', () => {
     const postStub = sinon.stub(client, 'post')
 
     const result = await dspaceApiMain.auth.login('wronguser', 'wrongpass')
-    equal(result, LOGIN_RESULT.FAILURE)
+    equal(result, false)
     ok(
       !client.defaults.headers.common['Authorization'],
       'Authorization header should not be set on failure'

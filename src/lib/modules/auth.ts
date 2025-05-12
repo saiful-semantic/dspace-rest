@@ -1,16 +1,16 @@
 import qs from 'node:querystring'
 import { apiClient, DSpaceApiError } from '../client'
-import { LOGIN_RESULT, ENDPOINTS } from '../../constants'
+import { ENDPOINTS } from '../../constants'
 
 export const authFunctions = {
   /**
    * Logs into DSpace. It tries DSpace 8+ CSRF mechanism first, then falls back to DSpace 7.
    * @param {string} user - The username.
    * @param {string} password - The password.
-   * @returns {Promise<string>} The result of the login attempt.
+   * @returns {Promise<boolean>} The result of the login attempt.
    */
-  login: async (user: string, password: string): Promise<string> => {
-    const tryLoginStrategy = async (csrfUrl: string, versionLabel: string): Promise<string> => {
+  login: async (user: string, password: string): Promise<boolean> => {
+    const tryLoginStrategy = async (csrfUrl: string, versionLabel: string): Promise<boolean> => {
       const csrfRes = await apiClient.get(csrfUrl) // apiClient is imported from client.ts
       const csrfToken =
         (csrfRes.headers['dspace-xsrf-token'] as string | undefined) ||
@@ -40,7 +40,7 @@ export const authFunctions = {
       if (csrfToken) {
         apiClient.defaults.headers.common['X-XSRF-Token'] = csrfToken
       }
-      return LOGIN_RESULT.SUCCESS
+      return true
     }
 
     try {
@@ -51,7 +51,7 @@ export const authFunctions = {
       try {
         return await tryLoginStrategy(ENDPOINTS.CSRF_DSPACE7, 'DSpace 7')
       } catch {
-        return LOGIN_RESULT.FAILURE
+        return false
       }
     }
   },

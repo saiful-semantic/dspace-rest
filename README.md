@@ -38,7 +38,7 @@ dspaceApi.core.info().then((info) => {
 })
 
 dspaceApi.auth.login('admin@example.edu', 'password').then((result) => {
-  console.log(result)
+  console.log(`Login result: ${result}`)
 })
 
 dspaceApi.communities.top().then((communities) => {

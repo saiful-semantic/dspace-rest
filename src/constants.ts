@@ -34,13 +34,14 @@ export const ENDPOINTS = {
   BUNDLES: `${CORE_PREFIX}/bundles`,
   BITSTREAMS: `${CORE_PREFIX}/bitstreams`,
 
-  // New Endpoints
+  // Epersons Endpoints
   EPERSONS: `${EPERSON_PREFIX}/epersons`,
   GROUPS: `${EPERSON_PREFIX}/groups`, // Assuming groups are under eperson module
   PROCESSES: `${SYSTEM_PREFIX}/processes`, // Or `${CORE_PREFIX}/processes` in DSpace 8+
   // DSpace 8+ seems to move processes to core:
   // PROCESSES: `${CORE_PREFIX}/processes`,
 
+  // Workflow Endpoints
   WORKFLOW_ITEMS: `${WORKFLOW_PREFIX}/workflowitems`,
   POOL_TASKS: `${WORKFLOW_PREFIX}/pooltasks`, // Tasks available for users to claim
   CLAIMED_TASKS: `${WORKFLOW_PREFIX}/claimedtasks`, // Tasks claimed by the current user
@@ -60,11 +61,5 @@ export const ENDPOINTS = {
   AUTHORITIES: `${INTEGRATION_PREFIX}/authorities`,
   EXTERNAL_SOURCES: `${INTEGRATION_PREFIX}/externalsources`,
   VERSIONS: `${VERSIONING_PREFIX}/versions`,
-  SIGNPOST: `${API_PREFIX}/signposting` // Signposting API
+  SIGNPOST: `${API_PREFIX}/signposting`
 }
-
-// --- Login Result ---
-export const LOGIN_RESULT = {
-  SUCCESS: 'login success',
-  FAILURE: 'login failure'
-} as const
