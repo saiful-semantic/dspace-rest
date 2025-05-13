@@ -20,7 +20,6 @@ describe('CLI: Auth Commands', () => {
     dspaceLoginStub = sinon.stub(dspaceClient, 'login')
     authSetStub = sinon.stub(storageService.auth, 'set')
     configStub = sinon.stub(storageService.config, 'load')
-    initializeStub = sinon.stub(storageService, 'initialize').resolves()
     consoleLogStub = sinon.stub(console, 'log')
     configStub.returns({ api_url: 'http://test' })
   })
@@ -55,9 +54,6 @@ describe('CLI: Auth Commands', () => {
         password: 'testpass'
       })
     )
-
-    // Verify initialize was called
-    assert.ok(initializeStub.calledOnce)
 
     // Verify success message
     assert.ok(consoleLogStub.calledWith('✅ Login successful! Credentials stored securely.'))

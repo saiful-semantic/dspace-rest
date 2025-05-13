@@ -6,7 +6,6 @@ import { configCommands } from './commands/config'
 import { itemsCommands } from './commands/items'
 import { bitstreamsCommands } from './commands/bitstreams'
 import { collectionsCommands } from './commands/collections'
-import { storageService } from './services/storage.service'
 
 function setupCommands(program: Command) {
   // Configuration Commands
@@ -88,9 +87,7 @@ function setupCommands(program: Command) {
     .action(() => collectionsCommands.handleCollectionsList())
 }
 
-async function main() {
-  await storageService.initialize()
-
+function main(): void {
   const program = new Command()
   const packageJson = JSON.parse(
     fileOps.readFileSync(fileOps.joinPath(__dirname, '../../package.json'), 'utf-8')
@@ -110,9 +107,11 @@ async function main() {
 }
 
 if (require.main === module) {
-  main().catch((err: unknown) => {
+  try {
+    main()
+  } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : String(err)
     console.error('❌ Error:', errorMessage)
     process.exit(1)
-  })
+  }
 }

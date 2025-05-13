@@ -4,9 +4,6 @@ import { storageService } from '../services/storage.service'
 
 export const authCommands = {
   async login(): Promise<void> {
-    // Initialize the secure store
-    await storageService.initialize()
-
     const config = await storageService.config.load()
     if (!config.api_url) {
       throw new Error(`Set the URL first with 'config:set <REST_API_URL>'`)

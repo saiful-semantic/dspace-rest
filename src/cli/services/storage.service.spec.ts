@@ -82,7 +82,7 @@ describe('CLI: Storage Service', () => {
   describe('Auth methods', () => {
     let mockConfigStore: { get: sinon.SinonStub; set: sinon.SinonStub }
 
-    beforeEach(async () => {
+    beforeEach(() => {
       mockConfigStore = {
         get: sinon.stub(),
         set: sinon.stub()
@@ -96,8 +96,6 @@ describe('CLI: Storage Service', () => {
       sinon.stub(storageService.auth, 'set').callsFake(async (key, value) => {
         await mockConfigStore.set(key, value)
       })
-
-      await storageService.initialize()
     })
 
     afterEach(() => {
