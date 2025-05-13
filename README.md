@@ -142,9 +142,10 @@ dspace-cli login
 
 ### Common Commands
 
-- Server Information:
+- Reset configuration:
   ```bash
-  dspace-cli server:info
+  dspace-cli config:reset
+  dspace-cli login:reset
   ```
 - List all items:
   ```bash
