@@ -1,9 +1,8 @@
 import { strict as assert } from 'assert'
 import sinon from 'sinon'
+import os from 'os'
 import { Config, storageService } from './storage.service'
 import { fileOps } from '../utils/file-ops'
-import os from 'os'
-import path from 'path'
 
 describe('CLI: Storage Service', () => {
   // Config tests
@@ -12,8 +11,8 @@ describe('CLI: Storage Service', () => {
     let mkdirSyncStub: sinon.SinonStub
     let writeFileSyncStub: sinon.SinonStub
     let readFileSyncStub: sinon.SinonStub
-    const CONFIG_DIR = path.join(os.homedir(), '.dspace')
-    const CONFIG_PATH = path.join(CONFIG_DIR, 'config.json')
+    const CONFIG_DIR = fileOps.joinPath(os.homedir(), '.dspace')
+    const CONFIG_PATH = fileOps.joinPath(CONFIG_DIR, 'config.json')
 
     beforeEach(() => {
       existsSyncStub = sinon.stub(fileOps, 'existsSync')

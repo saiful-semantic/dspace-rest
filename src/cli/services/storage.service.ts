@@ -1,6 +1,5 @@
 import { fileOps } from '../utils/file-ops'
 import os from 'node:os'
-import path from 'node:path'
 import type ConfigStore from 'configstore'
 
 export interface Config {
@@ -14,8 +13,8 @@ export interface Config {
   }
 }
 
-const CONFIG_DIR = path.join(os.homedir(), '.dspace')
-const CONFIG_PATH = path.join(CONFIG_DIR, 'config.json')
+const CONFIG_DIR = fileOps.joinPath(os.homedir(), '.dspace')
+const CONFIG_PATH = fileOps.joinPath(CONFIG_DIR, 'config.json')
 
 // For secure storage of sensitive data
 let secureStore: ConfigStore | undefined
