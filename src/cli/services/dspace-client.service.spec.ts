@@ -1,8 +1,7 @@
 import { strict as assert } from 'assert'
 import sinon from 'sinon'
 import { dspaceClient } from './dspace-client.service'
-import { configService } from './config.service'
-import { authStore } from '../utils/store'
+import { storageService } from './storage.service'
 
 describe('CLI: DSpace Client Service', () => {
   let configStub: sinon.SinonStub
@@ -11,8 +10,8 @@ describe('CLI: DSpace Client Service', () => {
   let loginStub: sinon.SinonStub
 
   beforeEach(() => {
-    configStub = sinon.stub(configService, 'loadConfig')
-    authGetStub = sinon.stub(authStore, 'get')
+    configStub = sinon.stub(storageService.config, 'load')
+    authGetStub = sinon.stub(storageService.auth, 'get')
     initStub = sinon.stub(dspaceClient, 'init')
     loginStub = sinon.stub(dspaceClient, 'login')
   })

@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import { Command } from 'commander'
-import { initializeStore } from './utils/store'
 import { fileOps } from './utils/file-ops'
 import { authCommands } from './commands/auth'
 import { configCommands } from './commands/config'
@@ -34,7 +33,12 @@ function setupCommands(program: Command) {
   program
     .command('login')
     .description('Store DSpace credentials securely')
-    .action(() => authCommands.login())
+    .action(() => authCommands.handleLogin())
+
+  program
+    .command('login:reset')
+    .description('Remove stored DSpace credentials')
+    .action(() => authCommands.handleLoginReset())
 
   // Item Commands
   program
@@ -88,9 +92,7 @@ function setupCommands(program: Command) {
     .action(() => collectionsCommands.handleCollectionsList())
 }
 
-async function main() {
-  await initializeStore()
-
+function main(): void {
   const program = new Command()
   const packageJson = JSON.parse(
     fileOps.readFileSync(fileOps.joinPath(__dirname, '../../package.json'), 'utf-8')
@@ -110,9 +112,11 @@ async function main() {
 }
 
 if (require.main === module) {
-  main().catch((err: unknown) => {
+  try {
+    main()
+  } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : String(err)
     console.error('❌ Error:', errorMessage)
     process.exit(1)
-  })
+  }
 }

@@ -2,9 +2,21 @@ import prompts from 'prompts'
 
 let _prompts: typeof prompts | null = null
 
+// For testing purposes
+export const __resetPromptsForTesting = (mockPrompts?: typeof prompts | null) => {
+  _prompts = mockPrompts || null
+}
+
 export const promptService = {
   async prompt(message: string, isPassword = false): Promise<string> {
-    _prompts = _prompts || (await import('prompts')).default
+    if (!_prompts) {
+      try {
+        _prompts = (await import('prompts')).default
+      } catch {
+        // Fallback to the imported version if dynamic import fails
+        _prompts = prompts
+      }
+    }
 
     const response = await _prompts({
       type: isPassword ? 'password' : 'text',

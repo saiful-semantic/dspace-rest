@@ -10,9 +10,9 @@ import { dspaceApi } from 'dspace-rest'
 
 async function main() {
     dspaceApi.init('http://localhost:8080/server')
-    
-    dspaceApi.auth.login('admin', 'admin').then((loginResponse: string) => {
-        if (loginResponse === 'login success') {
+
+    dspaceApi.auth.login('admin', 'admin').then((loginResponse: boolean) => {
+        if (loginResponse) {
             console.log('Login successful!')
         } else {
             console.log('Login failed')

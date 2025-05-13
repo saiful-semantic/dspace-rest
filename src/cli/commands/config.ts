@@ -1,27 +1,27 @@
-import { Config, configService } from '../services/config.service'
+import { storageService, Config } from '../services/storage.service'
 import { dspaceClient } from '../services/dspace-client.service'
 
 export const configCommands = {
-  set(value: string): void {
-    const config = configService.loadConfig()
+  async set(value: string): Promise<void> {
+    const config = await storageService.config.load()
     config['api_url'] = value
     config['verified'] = false
-    configService.saveConfig(config)
+    await storageService.config.save(config)
     console.log(`✅ Set api_url=${value}`)
   },
 
-  reset(): void {
+  async reset(): Promise<void> {
     const config: Config = {}
-    configService.saveConfig(config)
+    await storageService.config.save(config)
     console.log(`✅ Reset api_url`)
   },
 
-  verify(): void {
-    const config = configService.loadConfig()
+  async verify(): Promise<void> {
+    const config = await storageService.config.load()
     dspaceClient.init(config.api_url as string)
     dspaceClient
       .info()
-      .then((info) => {
+      .then(async (info) => {
         config['api_url'] = info['dspaceServer']
         config['verified'] = true
         config['serverInfo'] = {
@@ -30,7 +30,7 @@ export const configCommands = {
           dspaceVersion: info['dspaceVersion'],
           dspaceServer: info['dspaceServer']
         }
-        configService.saveConfig(config)
+        await storageService.config.save(config)
         console.log(`✅ Server is reachable. Configuration updated.`)
       })
       .catch((error: unknown) => {
@@ -39,8 +39,8 @@ export const configCommands = {
       })
   },
 
-  show(): void {
-    const config = configService.loadConfig()
+  async show(): Promise<void> {
+    const config = await storageService.config.load()
     console.log('Current configuration:')
     console.dir(config)
   }

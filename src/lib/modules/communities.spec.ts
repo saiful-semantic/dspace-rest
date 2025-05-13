@@ -104,7 +104,11 @@ describe('DSpace API Communities Module Tests', () => {
   })
 
   it('should update community', async () => {
-    const mockCommunity = { id: 'com-to-update', name: 'Updated Name', type: 'community' } as any
+    const mockCommunity = {
+      id: 'com-to-update',
+      name: 'Updated Name',
+      type: 'community'
+    } as unknown
     const payload = [{ op: 'replace', path: '/name', value: 'Updated Name' }]
     const patchStub = sinon.stub(client, 'patch').resolves({ data: mockCommunity })
     const comId = 'com-to-update'

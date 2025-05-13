@@ -1,6 +1,5 @@
 import { dspaceApi, Payload } from '../../index'
-import { configService } from './config.service'
-import { authStore } from '../utils/store'
+import { storageService } from './storage.service'
 import { readFileSync } from 'node:fs'
 
 export const dspaceClient = {
@@ -218,14 +217,16 @@ export const dspaceClient = {
   },
 
   async ensureAuth(): Promise<void> {
-    const config = configService.loadConfig()
+    const config = await storageService.config.load()
     if (!config.api_url) {
       throw new Error('Set the URL first with config:set <REST_API_URL>')
     }
 
     this.init(config.api_url)
 
-    const credentials = authStore.get<{ username: string; password: string }>('credentials')
+    const credentials = await storageService.auth.get<{ username: string; password: string }>(
+      'credentials'
+    )
     if (!credentials) {
       throw new Error('No saved credentials. Run "dspace-cli login" first.')
     }
