@@ -3,8 +3,7 @@ import sinon from 'sinon'
 import { authCommands } from './auth'
 import { promptService } from '../services/prompt.service'
 import { dspaceClient } from '../services/dspace-client.service'
-import { authStore } from '../utils/store'
-import { configService } from '../services/config.service'
+import { storageService } from '../services/storage.service'
 
 describe('CLI: Auth Commands', () => {
   let promptStub: sinon.SinonStub
@@ -12,14 +11,16 @@ describe('CLI: Auth Commands', () => {
   let dspaceLoginStub: sinon.SinonStub
   let authSetStub: sinon.SinonStub
   let configStub: sinon.SinonStub
+  let initializeStub: sinon.SinonStub
   let consoleLogStub: sinon.SinonStub
 
   beforeEach(() => {
     promptStub = sinon.stub(promptService, 'prompt')
     dspaceInitStub = sinon.stub(dspaceClient, 'init')
     dspaceLoginStub = sinon.stub(dspaceClient, 'login')
-    authSetStub = sinon.stub(authStore, 'set')
-    configStub = sinon.stub(configService, 'loadConfig')
+    authSetStub = sinon.stub(storageService.auth, 'set')
+    configStub = sinon.stub(storageService.config, 'load')
+    initializeStub = sinon.stub(storageService, 'initialize').resolves()
     consoleLogStub = sinon.stub(console, 'log')
     configStub.returns({ api_url: 'http://test' })
   })
@@ -54,6 +55,9 @@ describe('CLI: Auth Commands', () => {
         password: 'testpass'
       })
     )
+
+    // Verify initialize was called
+    assert.ok(initializeStub.calledOnce)
 
     // Verify success message
     assert.ok(consoleLogStub.calledWith('✅ Login successful! Credentials stored securely.'))

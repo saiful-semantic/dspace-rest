@@ -1,11 +1,13 @@
 import { promptService } from '../services/prompt.service'
 import { dspaceClient } from '../services/dspace-client.service'
-import { authStore } from '../utils/store'
-import { configService } from '../services/config.service'
+import { storageService } from '../services/storage.service'
 
 export const authCommands = {
   async login(): Promise<void> {
-    const config = configService.loadConfig()
+    // Initialize the secure store
+    await storageService.initialize()
+
+    const config = storageService.config.load()
     if (!config.api_url) {
       throw new Error(`Set the URL first with 'config:set <REST_API_URL>'`)
     }
@@ -16,7 +18,7 @@ export const authCommands = {
     try {
       dspaceClient.init(config.api_url)
       await dspaceClient.login(username, password)
-      authStore.set('credentials', { username, password })
+      storageService.auth.set('credentials', { username, password })
       console.log('✅ Login successful! Credentials stored securely.')
     } catch (e: unknown) {
       throw new Error(`Login failed: ${e instanceof Error ? e.message : String(e)}`)

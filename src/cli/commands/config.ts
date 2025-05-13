@@ -1,23 +1,24 @@
-import { Config, configService } from '../services/config.service'
+import { Config } from '../services/config.service'
+import { storageService } from '../services/storage.service'
 import { dspaceClient } from '../services/dspace-client.service'
 
 export const configCommands = {
   set(value: string): void {
-    const config = configService.loadConfig()
+    const config = storageService.config.load()
     config['api_url'] = value
     config['verified'] = false
-    configService.saveConfig(config)
+    storageService.config.save(config)
     console.log(`✅ Set api_url=${value}`)
   },
 
   reset(): void {
     const config: Config = {}
-    configService.saveConfig(config)
+    storageService.config.save(config)
     console.log(`✅ Reset api_url`)
   },
 
   verify(): void {
-    const config = configService.loadConfig()
+    const config = storageService.config.load()
     dspaceClient.init(config.api_url as string)
     dspaceClient
       .info()
@@ -30,7 +31,7 @@ export const configCommands = {
           dspaceVersion: info['dspaceVersion'],
           dspaceServer: info['dspaceServer']
         }
-        configService.saveConfig(config)
+        storageService.config.save(config)
         console.log(`✅ Server is reachable. Configuration updated.`)
       })
       .catch((error: unknown) => {
@@ -40,7 +41,7 @@ export const configCommands = {
   },
 
   show(): void {
-    const config = configService.loadConfig()
+    const config = storageService.config.load()
     console.log('Current configuration:')
     console.dir(config)
   }

@@ -1,7 +1,8 @@
 import { strict as assert } from 'assert'
 import sinon from 'sinon'
 import { configCommands } from './config'
-import { Config, configService } from '../services/config.service'
+import { Config } from '../services/config.service'
+import { storageService } from '../services/storage.service'
 import { dspaceClient } from '../services/dspace-client.service'
 
 describe('CLI: Config Commands', () => {
@@ -14,8 +15,8 @@ describe('CLI: Config Commands', () => {
   let dspaceInfoStub: sinon.SinonStub
 
   beforeEach(() => {
-    loadConfigStub = sinon.stub(configService, 'loadConfig').returns({ serverInfo: {} })
-    saveConfigStub = sinon.stub(configService, 'saveConfig')
+    loadConfigStub = sinon.stub(storageService.config, 'load').returns({ serverInfo: {} })
+    saveConfigStub = sinon.stub(storageService.config, 'save')
     consoleLogStub = sinon.stub(console, 'log')
     consoleDirStub = sinon.stub(console, 'dir')
     consoleErrorStub = sinon.stub(console, 'error')
