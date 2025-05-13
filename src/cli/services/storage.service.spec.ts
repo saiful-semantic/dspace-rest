@@ -8,48 +8,53 @@ describe('CLI: Storage Service', () => {
   // Config tests
   describe('Config methods', () => {
     let existsSyncStub: sinon.SinonStub
-    let mkdirSyncStub: sinon.SinonStub
-    let writeFileSyncStub: sinon.SinonStub
-    let readFileSyncStub: sinon.SinonStub
+    let mkdirAsyncStub: sinon.SinonStub
+    let writeFileAsyncStub: sinon.SinonStub
+    let readFileAsyncStub: sinon.SinonStub
     const CONFIG_DIR = fileOps.joinPath(os.homedir(), '.dspace')
     const CONFIG_PATH = fileOps.joinPath(CONFIG_DIR, 'config.json')
 
     beforeEach(() => {
       existsSyncStub = sinon.stub(fileOps, 'existsSync')
-      mkdirSyncStub = sinon.stub(fileOps, 'mkdirSync')
-      writeFileSyncStub = sinon.stub(fileOps, 'writeFileSync')
-      readFileSyncStub = sinon.stub(fileOps, 'readFileSync')
+      mkdirAsyncStub = sinon.stub(fileOps, 'mkdirAsync')
+      writeFileAsyncStub = sinon.stub(fileOps, 'writeFileAsync')
+      readFileAsyncStub = sinon.stub(fileOps, 'readFileAsync')
     })
 
     afterEach(() => {
       sinon.restore()
     })
 
-    it('should load config if file exists', () => {
+    it('should load config if file exists', async () => {
       existsSyncStub.withArgs(CONFIG_PATH).returns(true)
-      readFileSyncStub
+      readFileAsyncStub
         .withArgs(CONFIG_PATH, 'utf-8')
-        .returns('{"api_url":"https://example.com","serverInfo":{"dspaceVersion":"7.6"}}')
-      const config = storageService.config.load()
+        .resolves('{"api_url":"https://example.com","serverInfo":{"dspaceVersion":"7.6"}}')
+
+      const config = await storageService.config.load()
       assert.deepEqual(config, {
         api_url: 'https://example.com',
         serverInfo: {
           dspaceVersion: '7.6'
         }
       })
-      assert.ok(readFileSyncStub.calledWith(CONFIG_PATH, 'utf-8'))
+      assert.ok(readFileAsyncStub.calledWith(CONFIG_PATH, 'utf-8'))
     })
 
-    it('should create config file if it does not exist', () => {
+    it('should create config file if it does not exist', async () => {
       existsSyncStub.withArgs(CONFIG_PATH).returns(false)
-      readFileSyncStub.withArgs(CONFIG_PATH, 'utf-8').returns('{}')
-      const config = storageService.config.load()
+      readFileAsyncStub.withArgs(CONFIG_PATH, 'utf-8').resolves('{}')
+      mkdirAsyncStub.resolves()
+      writeFileAsyncStub.resolves()
+
+      const config = await storageService.config.load()
+
       assert.deepEqual(config, {})
-      assert.ok(mkdirSyncStub.calledWith(CONFIG_DIR, { recursive: true }))
-      assert.ok(writeFileSyncStub.calledWith(CONFIG_PATH, sinon.match.string))
+      assert.ok(mkdirAsyncStub.calledWith(CONFIG_DIR, { recursive: true }))
+      assert.ok(writeFileAsyncStub.calledWith(CONFIG_PATH, JSON.stringify({}, null, 2)))
     })
 
-    it('should save config with nested serverInfo', () => {
+    it('should save config with nested serverInfo', async () => {
       const config: Config = {
         api_url: 'https://example.edu/server',
         verified: false,
@@ -58,18 +63,18 @@ describe('CLI: Storage Service', () => {
           dspaceVersion: '7.6'
         }
       }
-      storageService.config.save(config)
-      assert.ok(writeFileSyncStub.calledWith(CONFIG_PATH, JSON.stringify(config, null, 2)))
+      await storageService.config.save(config)
+      assert.ok(writeFileAsyncStub.calledWith(CONFIG_PATH, JSON.stringify(config, null, 2)))
     })
 
-    it('should handle empty serverInfo', () => {
+    it('should handle empty serverInfo', async () => {
       const config: Config = {
         api_url: 'https://example.edu/server',
         verified: true,
         serverInfo: {}
       }
-      storageService.config.save(config)
-      assert.ok(writeFileSyncStub.calledWith(CONFIG_PATH, JSON.stringify(config, null, 2)))
+      await storageService.config.save(config)
+      assert.ok(writeFileAsyncStub.calledWith(CONFIG_PATH, JSON.stringify(config, null, 2)))
     })
   })
 
@@ -83,20 +88,15 @@ describe('CLI: Storage Service', () => {
         set: sinon.stub()
       }
 
-      // Instead of mocking the dynamic import, we'll directly stub the auth methods
-      // This is simpler and avoids TypeScript issues
-
-      // Create stubs for the auth methods
-      // Note: We're not calling sinon.restore() here to avoid interfering with other stubs
       sinon.stub(storageService.auth, 'get').callsFake((key) => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         return mockConfigStore.get(key)
       })
 
-      sinon.stub(storageService.auth, 'set').callsFake((key, value) => {
-        mockConfigStore.set(key, value)
+      sinon.stub(storageService.auth, 'set').callsFake(async (key, value) => {
+        await mockConfigStore.set(key, value)
       })
 
-      // Initialize the store
       await storageService.initialize()
     })
 
@@ -104,23 +104,23 @@ describe('CLI: Storage Service', () => {
       sinon.restore()
     })
 
-    it('should set auth credentials', () => {
+    it('should set auth credentials', async () => {
       const credentials = { username: 'testuser', password: 'testpass' }
-      storageService.auth.set('credentials', credentials)
+      await storageService.auth.set('credentials', credentials)
       assert.ok(mockConfigStore.set.calledWith('credentials', credentials))
     })
 
-    it('should get auth credentials', () => {
+    it('should get auth credentials', async () => {
       const credentials = { username: 'testuser', password: 'testpass' }
       mockConfigStore.get.withArgs('credentials').returns(credentials)
-      const result = storageService.auth.get('credentials')
+      const result = await storageService.auth.get('credentials')
       assert.deepEqual(result, credentials)
       assert.ok(mockConfigStore.get.calledWith('credentials'))
     })
 
-    it('should return undefined for non-existent key', () => {
+    it('should return undefined for non-existent key', async () => {
       mockConfigStore.get.withArgs('nonexistent').returns(undefined)
-      const result = storageService.auth.get('nonexistent')
+      const result = await storageService.auth.get('nonexistent')
       assert.equal(result, undefined)
     })
   })

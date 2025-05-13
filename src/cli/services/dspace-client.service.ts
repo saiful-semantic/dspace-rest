@@ -220,14 +220,14 @@ export const dspaceClient = {
     // Initialize the secure store
     await storageService.initialize()
 
-    const config = storageService.config.load()
+    const config = await storageService.config.load()
     if (!config.api_url) {
       throw new Error('Set the URL first with config:set <REST_API_URL>')
     }
 
     this.init(config.api_url)
 
-    const credentials = storageService.auth.get<{ username: string; password: string }>(
+    const credentials = await storageService.auth.get<{ username: string; password: string }>(
       'credentials'
     )
     if (!credentials) {

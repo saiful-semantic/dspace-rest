@@ -19,33 +19,52 @@ const CONFIG_PATH = fileOps.joinPath(CONFIG_DIR, 'config.json')
 // For secure storage of sensitive data
 let secureStore: ConfigStore | undefined
 
+async function ensureSecureStoreInitialized() {
+  if (!secureStore) {
+    const { default: ConfigStore } = await import('configstore')
+    secureStore = new ConfigStore('dspace-cli-auth')
+  }
+}
+
 export const storageService = {
   // Initialize the secure store for auth credentials
-  initialize: async (): Promise<void> => {
-    if (!secureStore) {
-      const { default: ConfigStore } = await import('configstore')
-      secureStore = new ConfigStore('dspace-cli-auth')
-    }
-  },
+  initialize: ensureSecureStoreInitialized,
 
   // Config methods (general configuration)
   config: {
-    load: (): Config => {
-      if (!fileOps.existsSync(CONFIG_PATH)) {
-        fileOps.mkdirSync(CONFIG_DIR, { recursive: true })
-        fileOps.writeFileSync(CONFIG_PATH, JSON.stringify({}, null, 2))
+    load: async (): Promise<Config> => {
+      try {
+        if (!fileOps.existsSync(CONFIG_PATH)) {
+          await fileOps.mkdirAsync(CONFIG_DIR, { recursive: true })
+          await fileOps.writeFileAsync(CONFIG_PATH, JSON.stringify({}, null, 2))
+        }
+        return JSON.parse(await fileOps.readFileAsync(CONFIG_PATH, 'utf-8')) as Config
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        throw new Error(`Failed to load config: ${errorMessage}`)
       }
-      return JSON.parse(fileOps.readFileSync(CONFIG_PATH, 'utf-8')) as Config
     },
 
-    save: (config: Config): void => {
-      fileOps.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2))
+    save: async (config: Config): Promise<void> => {
+      try {
+        await fileOps.writeFileAsync(CONFIG_PATH, JSON.stringify(config, null, 2))
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        throw new Error(`Failed to save config: ${errorMessage}`)
+      }
     }
   },
 
   // Auth methods (secure storage)
   auth: {
-    get: <T = unknown>(key: string): T | undefined => secureStore?.get(key) as T | undefined,
-    set: (key: string, value: unknown): void => secureStore?.set(key, value)
+    get: async <T = unknown>(key: string): Promise<T | undefined> => {
+      await ensureSecureStoreInitialized()
+      return secureStore?.get(key) as T | undefined
+    },
+
+    set: async (key: string, value: unknown): Promise<void> => {
+      await ensureSecureStoreInitialized()
+      secureStore?.set(key, value)
+    }
   }
 }

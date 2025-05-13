@@ -7,7 +7,7 @@ export const authCommands = {
     // Initialize the secure store
     await storageService.initialize()
 
-    const config = storageService.config.load()
+    const config = await storageService.config.load()
     if (!config.api_url) {
       throw new Error(`Set the URL first with 'config:set <REST_API_URL>'`)
     }
@@ -18,7 +18,7 @@ export const authCommands = {
     try {
       dspaceClient.init(config.api_url)
       await dspaceClient.login(username, password)
-      storageService.auth.set('credentials', { username, password })
+      await storageService.auth.set('credentials', { username, password })
       console.log('✅ Login successful! Credentials stored securely.')
     } catch (e: unknown) {
       throw new Error(`Login failed: ${e instanceof Error ? e.message : String(e)}`)

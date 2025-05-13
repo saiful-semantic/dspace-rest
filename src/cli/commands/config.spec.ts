@@ -14,7 +14,7 @@ describe('CLI: Config Commands', () => {
   let dspaceInfoStub: sinon.SinonStub
 
   beforeEach(() => {
-    loadConfigStub = sinon.stub(storageService.config, 'load').returns({ serverInfo: {} })
+    loadConfigStub = sinon.stub(storageService.config, 'load').resolves({ serverInfo: {} })
     saveConfigStub = sinon.stub(storageService.config, 'save')
     consoleLogStub = sinon.stub(console, 'log')
     consoleDirStub = sinon.stub(console, 'dir')
@@ -28,11 +28,11 @@ describe('CLI: Config Commands', () => {
   })
 
   describe('config:set', () => {
-    it('should set api_url and mark as unverified', () => {
+    it('should set api_url and mark as unverified', async () => {
       const config: Config = { serverInfo: {} }
       loadConfigStub.returns(config)
 
-      configCommands.set('https://example.edu/server')
+      await configCommands.set('https://example.edu/server')
 
       assert.equal(config.api_url, 'https://example.edu/server')
       assert.equal(config.verified, false)
@@ -42,7 +42,7 @@ describe('CLI: Config Commands', () => {
   })
 
   describe('config:reset', () => {
-    it('should reset the configuration to empty object', () => {
+    it('should reset the configuration to empty object', async () => {
       const config = {
         api_url: 'https://example.edu/server',
         verified: true,
@@ -52,7 +52,7 @@ describe('CLI: Config Commands', () => {
       }
       loadConfigStub.returns(config)
 
-      configCommands.reset()
+      await configCommands.reset()
 
       assert.ok(saveConfigStub.calledWith({}))
       assert.ok(consoleLogStub.calledWith('✅ Reset api_url'))
@@ -75,7 +75,7 @@ describe('CLI: Config Commands', () => {
       loadConfigStub.returns(config)
       dspaceInfoStub.resolves(mockInfo)
 
-      configCommands.verify()
+      await configCommands.verify()
       await new Promise((resolve) => process.nextTick(resolve)) // Wait for promise
 
       assert.ok(dspaceInitStub.calledWith('https://example.edu/server'))
@@ -97,7 +97,7 @@ describe('CLI: Config Commands', () => {
       loadConfigStub.returns(config)
       dspaceInfoStub.rejects(error)
 
-      configCommands.verify()
+      await configCommands.verify()
 
       // Wait for all promises to resolve
       await new Promise((resolve) => setTimeout(resolve, 0))
@@ -107,7 +107,7 @@ describe('CLI: Config Commands', () => {
   })
 
   describe('config:show', () => {
-    it('should display current configuration', () => {
+    it('should display current configuration', async () => {
       const config = {
         api_url: 'https://example.edu/server',
         verified: true,
@@ -117,7 +117,7 @@ describe('CLI: Config Commands', () => {
       }
       loadConfigStub.returns(config)
 
-      configCommands.show()
+      await configCommands.show()
 
       assert.ok(consoleLogStub.calledWith('Current configuration:'))
       assert.ok(consoleDirStub.calledWith(config))
