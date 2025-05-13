@@ -9,5 +9,6 @@ export const fileOps = {
   writeFileAsync: fs.promises.writeFile,
   readFileSync: fs.readFileSync,
   readFileAsync: fs.promises.readFile,
+  unlinkAsync: fs.promises.unlink,
   joinPath: (...paths: string[]) => path.join(...paths)
 }
