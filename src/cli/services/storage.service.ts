@@ -109,7 +109,7 @@ async function persistKeyToDiskCache(key: Uint8Array, durationMs: number): Promi
       try {
         await fileOps.unlinkAsync(SESSION_KEY_PATH)
         // console.info('INFO: Existing master key disk cache cleared as per user preference.')
-      } catch (e) {
+      } catch {
         /* ignore */
       }
     }
