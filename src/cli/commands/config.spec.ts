@@ -1,8 +1,7 @@
 import { strict as assert } from 'assert'
 import sinon from 'sinon'
 import { configCommands } from './config'
-import { Config } from '../services/config.service'
-import { storageService } from '../services/storage.service'
+import { storageService, Config } from '../services/storage.service'
 import { dspaceClient } from '../services/dspace-client.service'
 
 describe('CLI: Config Commands', () => {

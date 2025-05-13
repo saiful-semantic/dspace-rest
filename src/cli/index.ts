@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 import { Command } from 'commander'
-import { initializeStore } from './utils/store'
 import { fileOps } from './utils/file-ops'
 import { authCommands } from './commands/auth'
 import { configCommands } from './commands/config'
 import { itemsCommands } from './commands/items'
 import { bitstreamsCommands } from './commands/bitstreams'
 import { collectionsCommands } from './commands/collections'
+import { storageService } from './services/storage.service'
 
 function setupCommands(program: Command) {
   // Configuration Commands
@@ -89,7 +89,7 @@ function setupCommands(program: Command) {
 }
 
 async function main() {
-  await initializeStore()
+  await storageService.initialize()
 
   const program = new Command()
   const packageJson = JSON.parse(

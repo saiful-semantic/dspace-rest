@@ -1,6 +1,6 @@
 import { fileOps } from '../utils/file-ops'
-import os from 'os'
-import path from 'path'
+import os from 'node:os'
+import path from 'node:path'
 import type ConfigStore from 'configstore'
 
 export interface Config {

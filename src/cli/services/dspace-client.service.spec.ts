@@ -6,14 +6,12 @@ import { storageService } from './storage.service'
 describe('CLI: DSpace Client Service', () => {
   let configStub: sinon.SinonStub
   let authGetStub: sinon.SinonStub
-  let initializeStub: sinon.SinonStub
   let initStub: sinon.SinonStub
   let loginStub: sinon.SinonStub
 
   beforeEach(() => {
     configStub = sinon.stub(storageService.config, 'load')
     authGetStub = sinon.stub(storageService.auth, 'get')
-    initializeStub = sinon.stub(storageService, 'initialize').resolves()
     initStub = sinon.stub(dspaceClient, 'init')
     loginStub = sinon.stub(dspaceClient, 'login')
   })
