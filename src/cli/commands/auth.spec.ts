@@ -11,7 +11,6 @@ describe('CLI: Auth Commands', () => {
   let dspaceLoginStub: sinon.SinonStub
   let authSetStub: sinon.SinonStub
   let configStub: sinon.SinonStub
-  let initializeStub: sinon.SinonStub
   let consoleLogStub: sinon.SinonStub
 
   beforeEach(() => {
@@ -36,7 +35,7 @@ describe('CLI: Auth Commands', () => {
     // Setup successful login
     dspaceLoginStub.resolves()
 
-    await authCommands.login()
+    await authCommands.handleLogin()
 
     // Verify prompts
     assert.ok(promptStub.calledTwice)
@@ -67,7 +66,7 @@ describe('CLI: Auth Commands', () => {
     // Setup failed login
     dspaceLoginStub.rejects(new Error('Invalid credentials'))
 
-    await assert.rejects(() => authCommands.login(), /Login failed: Invalid credentials/)
+    await assert.rejects(() => authCommands.handleLogin(), /Login failed: Invalid credentials/)
 
     // Verify auth storage wasn't called
     assert.ok(authSetStub.notCalled)
@@ -76,9 +75,9 @@ describe('CLI: Auth Commands', () => {
   it('should throw error if REST API URL is not configured', async () => {
     configStub.returns({}) // No api_url in config
 
-    await assert.rejects(() => authCommands.login(), {
+    await assert.rejects(() => authCommands.handleLogin(), {
       name: 'Error',
-      message: `Set the URL first with 'config:set <REST_API_URL>'`
+      message: `Set the DSpace REST API URL first with 'dspace config:set <REST_API_URL>'`
     })
   })
 })

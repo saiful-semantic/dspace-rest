@@ -33,7 +33,12 @@ function setupCommands(program: Command) {
   program
     .command('login')
     .description('Store DSpace credentials securely')
-    .action(() => authCommands.login())
+    .action(() => authCommands.handleLogin())
+
+  program
+    .command('login:reset')
+    .description('Remove stored DSpace credentials')
+    .action(() => authCommands.handleLoginReset())
 
   // Item Commands
   program
