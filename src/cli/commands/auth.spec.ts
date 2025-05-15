@@ -80,7 +80,7 @@ describe('CLI: Auth Commands Tests', () => {
 
       await assert.rejects(() => authCommands.handleLogin(), {
         name: 'Error',
-        message: `Set the DSpace REST API URL first with 'dspace config:set <REST_API_URL>'`
+        message: `Set the DSpace REST API URL first with 'config:set <REST_API_URL>'`
       })
     })
 

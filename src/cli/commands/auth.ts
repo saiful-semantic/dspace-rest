@@ -7,7 +7,7 @@ export const authCommands = {
   async handleLogin(): Promise<void> {
     const config = await storageService.config.load()
     if (!config.api_url) {
-      throw new Error(`Set the DSpace REST API URL first with 'dspace config:set <REST_API_URL>'`)
+      throw new Error(`Set the DSpace REST API URL first with 'config:set <REST_API_URL>'`)
     }
 
     const username = await promptService.prompt('Username:')
