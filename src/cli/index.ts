@@ -36,6 +36,16 @@ function setupCommands(program: Command) {
     .action(() => authCommands.handleLogin())
 
   program
+    .command('logout')
+    .description('Logout and clear tokens')
+    .action(() => authCommands.handleLogout())
+
+  program
+    .command('login:status')
+    .description('Check login status')
+    .action(() => authCommands.handleStatus())
+
+  program
     .command('login:reset')
     .description('Remove stored DSpace credentials')
     .action(() => authCommands.handleLoginReset())

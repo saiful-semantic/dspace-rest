@@ -7,6 +7,7 @@ export const dspaceClient = {
   info: dspaceApi.core.info,
   login: dspaceApi.auth.login,
   logout: dspaceApi.auth.logout,
+  status: dspaceApi.auth.status,
 
   async showAllItems(): Promise<void> {
     try {

@@ -91,6 +91,6 @@ export const authFunctions = {
    * @returns {Promise<AuthStatus>} The status response.
    */
   status: async (): Promise<AuthStatus> => {
-    return clientRequest.get<AuthStatus>(ENDPOINTS.STATUS)
+    return await clientRequest.get<AuthStatus>(ENDPOINTS.STATUS)
   }
 }

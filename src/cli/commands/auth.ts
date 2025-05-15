@@ -94,5 +94,51 @@ export const authCommands = {
         throw new Error(`Failed to reset credentials: ${errorMessage}`)
       }
     }
+  },
+
+  async handleLogout(): Promise<void> {
+    const config = await storageService.config.load()
+    if (!config.api_url) {
+      throw new Error(`Set the DSpace REST API URL first with 'config:set <REST_API_URL>'`)
+    }
+
+    if (!config.verified) {
+      throw new Error(`Verify the DSpace REST API URL first with 'config:verify'`)
+    }
+
+    try {
+      await dspaceClient.logout()
+      console.log('✅ Logout successful! Credentials cleared from memory.')
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : String(e)
+      // console.error(`❌ Logout failed: ${errorMessage}`)
+      console.error(`❌ Not implemented yet: ${errorMessage}`)
+    }
+  },
+
+  async handleStatus(): Promise<void> {
+    const config = await storageService.config.load()
+    if (!config.api_url) {
+      throw new Error(`Set the DSpace REST API URL first with 'config:set <REST_API_URL>'`)
+    }
+
+    if (!config.verified) {
+      throw new Error(`Verify the DSpace REST API URL first with 'config:verify'`)
+    }
+
+    try {
+      await dspaceClient.ensureAuth()
+      const authStatus = await dspaceClient.status()
+      console.log(authStatus)
+      if (authStatus.authenticated) {
+        console.log(`✅ You are logged in as: ${authStatus._embedded?.eperson?.email}`)
+        console.log(`  Link: ${authStatus._links?.eperson?.href}`)
+      } else {
+        console.log('❌ You are not logged in to DSpace.')
+      }
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : String(e)
+      console.error(`❌ Failed to check login status: ${errorMessage}`)
+    }
   }
 }
