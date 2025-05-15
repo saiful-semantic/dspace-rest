@@ -83,9 +83,18 @@ export const clearAuthorization = (): void => {
  * @param {string} authToken - The authorization token (usually a Bearer token).
  * @param {string} csrfToken - The CSRF token for cross-site request forgery protection.
  */
-export const setAuthorization = (authToken: string, csrfToken: string): void => {
+export const setAuthorization = (authToken: string, csrfToken?: string): void => {
   apiClient.defaults.headers.common['Authorization'] = authToken
-  apiClient.defaults.headers.common['X-XSRF-Token'] = csrfToken
+  apiClient.defaults.headers.common['X-XSRF-Token'] = csrfToken || ''
+}
+
+/**
+ * Get the current authorization token from the API client.
+ * @returns {string|undefined} The current authorization token or undefined if not set.
+ */
+export const getAuthorization = (): string | undefined => {
+  const authHeader = apiClient.defaults.headers.common['Authorization']
+  return authHeader !== null ? (authHeader as string) : undefined
 }
 
 /**
