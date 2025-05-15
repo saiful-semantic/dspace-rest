@@ -1,4 +1,4 @@
-import { apiClient, setBaseVersion } from '../client'
+import { clientRequest, setBaseVersion } from '../client'
 import { ApiInfo } from '../dspace.types'
 import { ENDPOINTS } from '../../constants'
 
@@ -8,9 +8,7 @@ export const coreFunctions = {
    * @returns {Promise<ApiInfo>}
    */
   info: async (): Promise<ApiInfo> => {
-    // Directly using apiClient.get here as an example, or could use clientRequest.get
-    const response = await apiClient.get<ApiInfo>(ENDPOINTS.BASE)
-    return response.data
+    return await clientRequest.get<ApiInfo>(ENDPOINTS.BASE)
   },
 
   /**
