@@ -23,7 +23,7 @@ describe('CLI: Auth Commands Tests', () => {
       configStub = sinon.stub(storageService.config, 'load')
       consoleLogStub = sinon.stub(console, 'log')
       consoleErrorStub = sinon.stub(console, 'error')
-      configStub.returns({ api_url: 'http://test' })
+      configStub.returns({ api_url: 'http://test', verified: true })
     })
 
     afterEach(() => {
@@ -81,6 +81,15 @@ describe('CLI: Auth Commands Tests', () => {
       await assert.rejects(() => authCommands.handleLogin(), {
         name: 'Error',
         message: `Set the DSpace REST API URL first with 'config:set <REST_API_URL>'`
+      })
+    })
+
+    it('should throw error if REST API URL is not verified', async () => {
+      configStub.returns({ api_url: 'http://test', verified: false }) // URL not verified
+
+      await assert.rejects(() => authCommands.handleLogin(), {
+        name: 'Error',
+        message: `Verify the DSpace REST API URL first with 'config:verify'`
       })
     })
 

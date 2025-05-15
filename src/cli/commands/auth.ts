@@ -10,6 +10,10 @@ export const authCommands = {
       throw new Error(`Set the DSpace REST API URL first with 'config:set <REST_API_URL>'`)
     }
 
+    if (!config.verified) {
+      throw new Error(`Verify the DSpace REST API URL first with 'config:verify'`)
+    }
+
     const username = await promptService.prompt('Username:')
     if (!username) throw new Error('Username cannot be empty.')
     const password = await promptService.prompt('Password:', true)
