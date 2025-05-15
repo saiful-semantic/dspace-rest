@@ -2,6 +2,7 @@ import { strict as assert } from 'assert'
 import sinon from 'sinon'
 import { dspaceClient } from './dspace-client.service'
 import { storageService } from './storage.service'
+import { authCommands } from '../commands/auth'
 
 describe('CLI: DSpace Client Service', () => {
   let configStub: sinon.SinonStub
@@ -25,14 +26,23 @@ describe('CLI: DSpace Client Service', () => {
     await assert.rejects(() => dspaceClient.ensureAuth(), /Set the URL first/)
   })
 
+  it('should throw error if api_url is not verified', async () => {
+    configStub.returns({ api_url: 'http://test', verified: false }) // URL not verified
+
+    await assert.rejects(() => authCommands.handleLogin(), {
+      name: 'Error',
+      message: `Verify the DSpace REST API URL first with 'config:verify'`
+    })
+  })
+
   it('should throw if credentials are missing', async () => {
-    configStub.returns({ api_url: 'http://test' })
+    configStub.returns({ api_url: 'http://test', verified: true })
     authGetStub.withArgs('credentials').returns(undefined)
     await assert.rejects(() => dspaceClient.ensureAuth(), /No saved credentials/)
   })
 
   it('should call init and login with credentials', async () => {
-    configStub.returns({ api_url: 'http://test' })
+    configStub.returns({ api_url: 'http://test', verified: true })
     authGetStub.withArgs('credentials').returns({ username: 'user', password: 'pass' })
     loginStub.resolves()
     await dspaceClient.ensureAuth()

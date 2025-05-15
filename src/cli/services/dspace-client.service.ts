@@ -223,6 +223,10 @@ export const dspaceClient = {
       throw new Error('Set the URL first with config:set <REST_API_URL>')
     }
 
+    if (!config.verified) {
+      throw new Error(`Verify the DSpace REST API URL first with 'config:verify'`)
+    }
+
     this.init(config.api_url)
 
     const credentials = await storageService.auth.get<{ username: string; password: string }>(
