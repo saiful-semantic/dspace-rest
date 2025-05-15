@@ -5,24 +5,17 @@ import { storageService } from '../services/storage.service'
 
 export const authCommands = {
   async handleLogin(): Promise<void> {
-    const config = await storageService.config.load()
-    if (!config.api_url) {
-      throw new Error(`Set the DSpace REST API URL first with 'config:set <REST_API_URL>'`)
-    }
-
-    if (!config.verified) {
-      throw new Error(`Verify the DSpace REST API URL first with 'config:verify'`)
-    }
-
     const username = await promptService.prompt('Username:')
     if (!username) throw new Error('Username cannot be empty.')
     const password = await promptService.prompt('Password:', true)
     if (!password) throw new Error('Password cannot be empty.')
 
     try {
-      dspaceClient.init(config.api_url)
+      await dspaceClient.initClient()
       await dspaceClient.login(username, password)
 
+      const authToken = dspaceClient.getAuthorization()
+      await storageService.auth.set('authToken', authToken)
       await storageService.auth.set('credentials', { username, password }) // This will handle master pass setup/prompting
       console.log('✅ Login successful! Credentials stored securely.')
     } catch (e: unknown) {
@@ -97,44 +90,39 @@ export const authCommands = {
   },
 
   async handleLogout(): Promise<void> {
-    const config = await storageService.config.load()
-    if (!config.api_url) {
-      throw new Error(`Set the DSpace REST API URL first with 'config:set <REST_API_URL>'`)
-    }
-
-    if (!config.verified) {
-      throw new Error(`Verify the DSpace REST API URL first with 'config:verify'`)
-    }
-
     try {
+      let authToken = await storageService.auth.get<string>('authToken')
+      if (!authToken) {
+        console.log('❌ You are not logged in to DSpace.')
+        return
+      }
+      console.log('Logging out from DSpace...')
+      await dspaceClient.initClient()
       await dspaceClient.logout()
+      await storageService.auth.delete('authToken')
       console.log('✅ Logout successful! Credentials cleared from memory.')
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : String(e)
-      // console.error(`❌ Logout failed: ${errorMessage}`)
-      console.error(`❌ Not implemented yet: ${errorMessage}`)
+      console.error(`❌ Logout failed: ${errorMessage}`)
     }
   },
 
   async handleStatus(): Promise<void> {
-    const config = await storageService.config.load()
-    if (!config.api_url) {
-      throw new Error(`Set the DSpace REST API URL first with 'config:set <REST_API_URL>'`)
-    }
-
-    if (!config.verified) {
-      throw new Error(`Verify the DSpace REST API URL first with 'config:verify'`)
-    }
+    await dspaceClient.initClient()
 
     try {
-      await dspaceClient.ensureAuth()
-      const authStatus = await dspaceClient.status()
-      if (authStatus.authenticated) {
-        console.log(`✅ You are logged in as: ${authStatus._embedded?.eperson?.email}`)
-        console.log(`  Link: ${authStatus._links?.eperson?.href}`)
-      } else {
-        console.log('❌ You are not logged in to DSpace.')
+      let authToken = await storageService.auth.get<string>('authToken')
+      if (authToken) {
+        console.log('Found cached auth token. Checking login status...')
+        dspaceClient.setAuthorization(authToken)
+        const authStatus = await dspaceClient.status()
+        if (authStatus.authenticated) {
+          console.log(`✅ You are logged in as: ${authStatus._embedded?.eperson?.email}`)
+          console.log(`  Link: ${authStatus._links?.eperson?.href}`)
+          return
+        }
       }
+      console.log('❌ You are not logged in to DSpace.')
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : String(e)
       console.error(`❌ Failed to check login status: ${errorMessage}`)

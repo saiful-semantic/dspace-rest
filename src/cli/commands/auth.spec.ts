@@ -8,22 +8,22 @@ import { storageService } from '../services/storage.service'
 describe('CLI: Auth Commands Tests', () => {
   describe('login', () => {
     let promptStub: sinon.SinonStub
-    let dspaceInitStub: sinon.SinonStub
+    let dspaceInitClientStub: sinon.SinonStub
     let dspaceLoginStub: sinon.SinonStub
+    let dspaceGetAuthorizationStub: sinon.SinonStub
     let authSetStub: sinon.SinonStub
-    let configStub: sinon.SinonStub
     let consoleLogStub: sinon.SinonStub
     let consoleErrorStub: sinon.SinonStub
 
     beforeEach(() => {
       promptStub = sinon.stub(promptService, 'prompt')
-      dspaceInitStub = sinon.stub(dspaceClient, 'init')
+      dspaceInitClientStub = sinon.stub(dspaceClient, 'initClient')
       dspaceLoginStub = sinon.stub(dspaceClient, 'login')
+      dspaceGetAuthorizationStub = sinon.stub(dspaceClient, 'getAuthorization')
       authSetStub = sinon.stub(storageService.auth, 'set')
-      configStub = sinon.stub(storageService.config, 'load')
       consoleLogStub = sinon.stub(console, 'log')
       consoleErrorStub = sinon.stub(console, 'error')
-      configStub.returns({ api_url: 'http://test', verified: true })
+      dspaceGetAuthorizationStub.returns('test-auth-token')
     })
 
     afterEach(() => {
@@ -46,10 +46,12 @@ describe('CLI: Auth Commands Tests', () => {
       assert.ok(promptStub.secondCall.calledWith('Password:', true))
 
       // Verify DSpace client initialization
-      assert.ok(dspaceInitStub.calledWith('http://test'))
+      assert.ok(dspaceInitClientStub.called)
       assert.ok(dspaceLoginStub.calledWith('testuser', 'testpass'))
+      assert.ok(dspaceGetAuthorizationStub.called)
 
       // Verify auth storage
+      assert.ok(authSetStub.calledWith('authToken', 'test-auth-token'))
       assert.ok(
         authSetStub.calledWith('credentials', {
           username: 'testuser',
@@ -75,22 +77,21 @@ describe('CLI: Auth Commands Tests', () => {
       assert.ok(authSetStub.notCalled)
     })
 
-    it('should throw error if REST API URL is not configured', async () => {
-      configStub.returns({}) // No api_url in config
+    it('should throw error if initClient fails', async () => {
+      // Setup prompt responses
+      promptStub.onFirstCall().resolves('testuser')
+      promptStub.onSecondCall().resolves('testpass')
 
-      await assert.rejects(() => authCommands.handleLogin(), {
-        name: 'Error',
-        message: `Set the DSpace REST API URL first with 'config:set <REST_API_URL>'`
-      })
-    })
+      // Setup failed initClient
+      dspaceInitClientStub.rejects(new Error('Set the URL first with config:set <REST_API_URL>'))
 
-    it('should throw error if REST API URL is not verified', async () => {
-      configStub.returns({ api_url: 'http://test', verified: false }) // URL not verified
+      await assert.rejects(
+        () => authCommands.handleLogin(),
+        /Login failed: Set the URL first with config:set <REST_API_URL>/
+      )
 
-      await assert.rejects(() => authCommands.handleLogin(), {
-        name: 'Error',
-        message: `Verify the DSpace REST API URL first with 'config:verify'`
-      })
+      // Verify auth storage wasn't called
+      assert.ok(authSetStub.notCalled)
     })
 
     it('should handle empty username', async () => {
@@ -138,6 +139,167 @@ describe('CLI: Auth Commands Tests', () => {
 
       // Verify error messages
       assert.ok(consoleErrorStub.calledWith('❌ Login failed: Master password entry cancelled'))
+    })
+  })
+
+  describe('logout', () => {
+    let dspaceInitClientStub: sinon.SinonStub
+    let dspaceLogoutStub: sinon.SinonStub
+    let authGetStub: sinon.SinonStub
+    let authDeleteStub: sinon.SinonStub
+    let consoleLogStub: sinon.SinonStub
+    let consoleErrorStub: sinon.SinonStub
+
+    beforeEach(() => {
+      dspaceInitClientStub = sinon.stub(dspaceClient, 'initClient')
+      dspaceLogoutStub = sinon.stub(dspaceClient, 'logout')
+      authGetStub = sinon.stub(storageService.auth, 'get')
+      authDeleteStub = sinon.stub(storageService.auth, 'delete')
+      consoleLogStub = sinon.stub(console, 'log')
+      consoleErrorStub = sinon.stub(console, 'error')
+    })
+
+    afterEach(() => {
+      sinon.restore()
+    })
+
+    it('should logout successfully when auth token exists', async () => {
+      // Setup auth token
+      authGetStub.resolves('test-auth-token')
+
+      // Setup successful logout
+      dspaceLogoutStub.resolves()
+
+      await authCommands.handleLogout()
+
+      // Verify client initialization
+      assert.ok(dspaceInitClientStub.called)
+      assert.ok(dspaceLogoutStub.called)
+      assert.ok(authDeleteStub.calledWith('authToken'))
+      assert.ok(consoleLogStub.calledWith('✅ Logout successful! Credentials cleared from memory.'))
+    })
+
+    it('should do nothing if no auth token exists', async () => {
+      // Setup no auth token
+      authGetStub.resolves(null)
+
+      await authCommands.handleLogout()
+
+      // Verify client initialization not called
+      assert.ok(dspaceInitClientStub.notCalled)
+      assert.ok(dspaceLogoutStub.notCalled)
+      assert.ok(authDeleteStub.notCalled)
+      assert.ok(consoleLogStub.calledWith('❌ You are not logged in to DSpace.'))
+    })
+
+    it('should handle logout errors', async () => {
+      // Setup auth token
+      authGetStub.resolves('test-auth-token')
+
+      // Setup failed logout
+      dspaceLogoutStub.rejects(new Error('Logout failed'))
+
+      await authCommands.handleLogout()
+
+      // Verify error handling
+      assert.ok(consoleErrorStub.calledWith('❌ Logout failed: Logout failed'))
+    })
+  })
+
+  describe('login:status', () => {
+    let dspaceInitClientStub: sinon.SinonStub
+    let dspaceSetAuthorizationStub: sinon.SinonStub
+    let dspaceStatusStub: sinon.SinonStub
+    let authGetStub: sinon.SinonStub
+    let consoleLogStub: sinon.SinonStub
+    let consoleErrorStub: sinon.SinonStub
+
+    beforeEach(() => {
+      dspaceInitClientStub = sinon.stub(dspaceClient, 'initClient')
+      dspaceSetAuthorizationStub = sinon.stub(dspaceClient, 'setAuthorization')
+      dspaceStatusStub = sinon.stub(dspaceClient, 'status')
+      authGetStub = sinon.stub(storageService.auth, 'get')
+      consoleLogStub = sinon.stub(console, 'log')
+      consoleErrorStub = sinon.stub(console, 'error')
+    })
+
+    afterEach(() => {
+      sinon.restore()
+    })
+
+    it('should show authenticated status when auth token exists and is valid', async () => {
+      // Setup auth token
+      authGetStub.resolves('test-auth-token')
+
+      // Setup authenticated status
+      dspaceStatusStub.resolves({
+        authenticated: true,
+        _embedded: {
+          eperson: {
+            email: 'test@example.com'
+          }
+        },
+        _links: {
+          eperson: {
+            href: 'http://test/eperson/123'
+          }
+        }
+      })
+
+      await authCommands.handleStatus()
+
+      // Verify client initialization
+      assert.ok(dspaceInitClientStub.called)
+      assert.ok(dspaceSetAuthorizationStub.calledWith('test-auth-token'))
+      assert.ok(dspaceStatusStub.called)
+      assert.ok(consoleLogStub.calledWith('Found cached auth token. Checking login status...'))
+      assert.ok(consoleLogStub.calledWith('✅ You are logged in as: test@example.com'))
+      assert.ok(consoleLogStub.calledWith('  Link: http://test/eperson/123'))
+    })
+
+    it('should show not authenticated when auth token exists but is invalid', async () => {
+      // Setup auth token
+      authGetStub.resolves('test-auth-token')
+
+      // Setup not authenticated status
+      dspaceStatusStub.resolves({
+        authenticated: false
+      })
+
+      await authCommands.handleStatus()
+
+      // Verify client initialization
+      assert.ok(dspaceInitClientStub.called)
+      assert.ok(dspaceSetAuthorizationStub.calledWith('test-auth-token'))
+      assert.ok(dspaceStatusStub.called)
+      assert.ok(consoleLogStub.calledWith('Found cached auth token. Checking login status...'))
+      assert.ok(consoleLogStub.calledWith('❌ You are not logged in to DSpace.'))
+    })
+
+    it('should show not authenticated when no auth token exists', async () => {
+      // Setup no auth token
+      authGetStub.resolves(null)
+
+      await authCommands.handleStatus()
+
+      // Verify client initialization
+      assert.ok(dspaceInitClientStub.called)
+      assert.ok(dspaceSetAuthorizationStub.notCalled)
+      assert.ok(dspaceStatusStub.notCalled)
+      assert.ok(consoleLogStub.calledWith('❌ You are not logged in to DSpace.'))
+    })
+
+    it('should handle status check errors', async () => {
+      // Setup auth token
+      authGetStub.resolves('test-auth-token')
+
+      // Setup status check error
+      dspaceStatusStub.rejects(new Error('Status check failed'))
+
+      await authCommands.handleStatus()
+
+      // Verify error handling
+      assert.ok(consoleErrorStub.calledWith('❌ Failed to check login status: Status check failed'))
     })
   })
 
