@@ -1,5 +1,5 @@
 import { Collection, Collections } from '../dspace.types'
-import { request, Payload } from '../client'
+import { clientRequest, Payload } from '../client'
 import { ENDPOINTS } from '../../constants'
 
 export const collectionsFunctions = {
@@ -10,7 +10,7 @@ export const collectionsFunctions = {
    * @returns {Promise<Collections>} A promise that resolves with an object containing the list of Collections and pagination details.
    */
   all: (size: number = 20, page: number = 0): Promise<Collections> =>
-    request.get<Collections>(`${ENDPOINTS.COLLECTIONS}?size=${size}&page=${page}`),
+    clientRequest.get<Collections>(`${ENDPOINTS.COLLECTIONS}?size=${size}&page=${page}`),
 
   /**
    * Retrieves a specific Collection by its unique identifier.
@@ -18,7 +18,7 @@ export const collectionsFunctions = {
    * @returns {Promise<Collection>} A promise that resolves with the Collection object.
    */
   byId: (colId: string): Promise<Collection> =>
-    request.get<Collection>(`${ENDPOINTS.COLLECTIONS}/${colId}`),
+    clientRequest.get<Collection>(`${ENDPOINTS.COLLECTIONS}/${colId}`),
 
   /**
    * Retrieves a paginated list of Collections belonging to a specific Community.
@@ -28,7 +28,7 @@ export const collectionsFunctions = {
    * @returns {Promise<Collections>} A promise that resolves with an object containing the list of Collections and pagination details.
    */
   byComId: (comId: string, size: number = 10, page: number = 0): Promise<Collections> =>
-    request.get<Collections>(
+    clientRequest.get<Collections>(
       `${ENDPOINTS.COMMUNITIES}/${comId}/collections?size=${size}&page=${page}`
     ),
 
@@ -42,7 +42,7 @@ export const collectionsFunctions = {
     comId: string,
     payload: Payload // Create under a community
   ): Promise<Collection> =>
-    request.post<Collection>(`${ENDPOINTS.COMMUNITIES}/${comId}/collections`, payload),
+    clientRequest.post<Collection>(`${ENDPOINTS.COMMUNITIES}/${comId}/collections`, payload),
 
   /**
    * Deletes a specific Collection by its unique identifier.
@@ -50,7 +50,7 @@ export const collectionsFunctions = {
    * @returns {Promise<void>} A promise that resolves when the deletion is successful.
    */
   deleteById: (colId: string): Promise<void> =>
-    request.delete<void>(`${ENDPOINTS.COLLECTIONS}/${colId}`),
+    clientRequest.delete<void>(`${ENDPOINTS.COLLECTIONS}/${colId}`),
 
   /**
    * Updates an existing Collection using JSON Patch operations.
@@ -59,5 +59,5 @@ export const collectionsFunctions = {
    * @returns {Promise<Collection>} A promise that resolves with the updated Collection object.
    */
   update: (colId: string, payload: Payload): Promise<Collection> =>
-    request.patch<Collection>(`${ENDPOINTS.COLLECTIONS}/${colId}`, payload) // JSON Patch for updates
+    clientRequest.patch<Collection>(`${ENDPOINTS.COLLECTIONS}/${colId}`, payload) // JSON Patch for updates
 }

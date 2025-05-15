@@ -85,7 +85,7 @@ export const responseBody = <T>(response: AxiosResponse<T>): T => response.data
 
 // --- Request Methods Wrapper ---
 // These methods now use the configured apiClient
-export const request = {
+export const clientRequest = {
   get: <T>(url: string, config?: InternalAxiosRequestConfig) =>
     apiClient.get<T>(url, config).then(responseBody),
   post: <T>(url: string, body: Payload, config?: InternalAxiosRequestConfig) =>

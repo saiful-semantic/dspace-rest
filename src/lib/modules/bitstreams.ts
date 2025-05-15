@@ -1,6 +1,6 @@
 import { Bitstream, Bitstreams } from '../dspace.types'
 import { ENDPOINTS } from '../../constants'
-import { apiClient, Payload, request, responseBody } from '../client'
+import { apiClient, Payload, clientRequest, responseBody } from '../client'
 
 export const bitstreamsFunctions = {
   /**
@@ -9,7 +9,7 @@ export const bitstreamsFunctions = {
    * @returns {Promise<Bitstream>} A promise that resolves with the Bitstream object.
    */
   byId: (bitstreamId: string): Promise<Bitstream> =>
-    request.get<Bitstream>(`${ENDPOINTS.BITSTREAMS}/${bitstreamId}`),
+    clientRequest.get<Bitstream>(`${ENDPOINTS.BITSTREAMS}/${bitstreamId}`),
 
   /**
    * Retrieves a paginated list of Bitstreams belonging to a specific Bundle.
@@ -19,7 +19,7 @@ export const bitstreamsFunctions = {
    * @returns {Promise<Bitstreams>} A promise that resolves with an object containing the list of Bitstreams and pagination details.
    */
   byBundleId: (bundleId: string, size: number = 20, page: number = 0): Promise<Bitstreams> =>
-    request.get<Bitstreams>(
+    clientRequest.get<Bitstreams>(
       `${ENDPOINTS.BUNDLES}/${bundleId}/bitstreams?size=${size}&page=${page}`
     ),
 
@@ -37,7 +37,7 @@ export const bitstreamsFunctions = {
       url += `?name=${encodeURIComponent(name)}`
     }
     // Use postForm for multipart/form-data
-    return request.postForm<Bitstream>(url, formData)
+    return clientRequest.postForm<Bitstream>(url, formData)
   },
 
   /**
@@ -46,7 +46,7 @@ export const bitstreamsFunctions = {
    * @returns {Promise<void>} A promise that resolves when the deletion is successful.
    */
   deleteById: (bitstreamId: string): Promise<void> =>
-    request.delete<void>(`${ENDPOINTS.BITSTREAMS}/${bitstreamId}`),
+    clientRequest.delete<void>(`${ENDPOINTS.BITSTREAMS}/${bitstreamId}`),
 
   /**
    * Retrieves (downloads) the actual content (file) of a specific Bitstream.
@@ -71,7 +71,7 @@ export const bitstreamsFunctions = {
     bitstreamId: string,
     payload: Payload // JSON Patch for metadata
   ): Promise<Bitstream> =>
-    request.patch<Bitstream>(`${ENDPOINTS.BITSTREAMS}/${bitstreamId}`, payload),
+    clientRequest.patch<Bitstream>(`${ENDPOINTS.BITSTREAMS}/${bitstreamId}`, payload),
 
   /**
    * Performs batch operations on multiple Bitstreams using JSON Patch.
@@ -80,5 +80,5 @@ export const bitstreamsFunctions = {
    * @returns {Promise<unknown>} A promise that resolves with the result of the batch operation. The exact response structure may vary.
    */
   batchUpdate: (payload: Payload): Promise<unknown> =>
-    request.patch<unknown>(ENDPOINTS.BITSTREAMS, payload) // Payload is an array of JSON Patch ops
+    clientRequest.patch<unknown>(ENDPOINTS.BITSTREAMS, payload) // Payload is an array of JSON Patch ops
 }

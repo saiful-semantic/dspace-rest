@@ -1,5 +1,5 @@
 import { Communities, Community, SubCommunities } from '../dspace.types'
-import { request, Payload } from '../client'
+import { clientRequest, Payload } from '../client'
 import { ENDPOINTS } from '../../constants'
 
 export const communitiesFunctions = {
@@ -10,7 +10,7 @@ export const communitiesFunctions = {
    * @returns {Promise<Communities>} A promise that resolves with an object containing the list of all Communities and pagination details.
    */
   all: (size: number = 20, page: number = 0): Promise<Communities> =>
-    request.get<Communities>(`${ENDPOINTS.COMMUNITIES}?size=${size}&page=${page}`),
+    clientRequest.get<Communities>(`${ENDPOINTS.COMMUNITIES}?size=${size}&page=${page}`),
 
   /**
    * Retrieves a specific Community by its unique identifier.
@@ -18,7 +18,7 @@ export const communitiesFunctions = {
    * @returns {Promise<Community>} A promise that resolves with the Community object.
    */
   byId: (comId: string): Promise<Community> =>
-    request.get<Community>(`${ENDPOINTS.COMMUNITIES}/${comId}`),
+    clientRequest.get<Community>(`${ENDPOINTS.COMMUNITIES}/${comId}`),
 
   /**
    * Retrieves a paginated list of top-level Communities (those without a parent community).
@@ -27,7 +27,7 @@ export const communitiesFunctions = {
    * @returns {Promise<Communities>} A promise that resolves with an object containing the list of top-level Communities and pagination details.
    */
   top: (size: number = 20, page: number = 0): Promise<Communities> =>
-    request.get<Communities>(`${ENDPOINTS.COMMUNITIES}/search/top?size=${size}&page=${page}`),
+    clientRequest.get<Communities>(`${ENDPOINTS.COMMUNITIES}/search/top?size=${size}&page=${page}`),
 
   /**
    * Retrieves a paginated list of sub-communities belonging to a specific parent Community.
@@ -37,7 +37,7 @@ export const communitiesFunctions = {
    * @returns {Promise<SubCommunities>} A promise that resolves with an object containing the list of sub-communities and pagination details. Note: The type `SubCommunities` might be similar or identical to `Communities` depending on your DSpace types definition.
    */
   subById: (comId: string, size: number = 100, page: number = 0): Promise<SubCommunities> =>
-    request.get<SubCommunities>(
+    clientRequest.get<SubCommunities>(
       `${ENDPOINTS.COMMUNITIES}/${comId}/subcommunities?size=${size}&page=${page}`
     ),
 
@@ -52,7 +52,7 @@ export const communitiesFunctions = {
     const url = parentCommunityId
       ? `${ENDPOINTS.COMMUNITIES}?parent=${parentCommunityId}` // Append parent UUID as query parameter
       : ENDPOINTS.COMMUNITIES // Base endpoint for top-level communities
-    return request.post<Community>(url, payload)
+    return clientRequest.post<Community>(url, payload)
   },
 
   /**
@@ -62,7 +62,7 @@ export const communitiesFunctions = {
    * @returns {Promise<void>} A promise that resolves when the deletion is successful.
    */
   deleteById: (comId: string): Promise<void> =>
-    request.delete<void>(`${ENDPOINTS.COMMUNITIES}/${comId}`),
+    clientRequest.delete<void>(`${ENDPOINTS.COMMUNITIES}/${comId}`),
 
   /**
    * Updates an existing Community using JSON Patch operations.
@@ -71,5 +71,5 @@ export const communitiesFunctions = {
    * @returns {Promise<Community>} A promise that resolves with the updated Community object.
    */
   update: (comId: string, payload: Payload): Promise<Community> =>
-    request.patch<Community>(`${ENDPOINTS.COMMUNITIES}/${comId}`, payload) // JSON Patch for updates
+    clientRequest.patch<Community>(`${ENDPOINTS.COMMUNITIES}/${comId}`, payload) // JSON Patch for updates
 }

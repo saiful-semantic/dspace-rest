@@ -1,6 +1,6 @@
 import { AuthStatus, EPerson, EPersons, Group } from '../dspace.types'
 import { ENDPOINTS } from '../../constants'
-import { Payload, request } from '../client'
+import { Payload, clientRequest } from '../client'
 import { authFunctions } from './auth'
 
 export const epersonsFunctions = {
@@ -11,7 +11,7 @@ export const epersonsFunctions = {
    * @returns {Promise<EPersons>}
    */
   all: (size: number = 20, page: number = 0): Promise<EPersons> =>
-    request.get<EPersons>(`${ENDPOINTS.EPERSONS}?size=${size}&page=${page}`),
+    clientRequest.get<EPersons>(`${ENDPOINTS.EPERSONS}?size=${size}&page=${page}`),
 
   /**
    * Retrieves a specific eperson by their UUID.
@@ -19,7 +19,7 @@ export const epersonsFunctions = {
    * @returns {Promise<EPerson>}
    */
   byId: (epersonId: string): Promise<EPerson> =>
-    request.get<EPerson>(`${ENDPOINTS.EPERSONS}/${epersonId}`),
+    clientRequest.get<EPerson>(`${ENDPOINTS.EPERSONS}/${epersonId}`),
 
   /**
    * Creates a new eperson.
@@ -28,7 +28,7 @@ export const epersonsFunctions = {
    * @returns {Promise<EPerson>} The created eperson.
    */
   create: (payload: Payload): Promise<EPerson> =>
-    request.post<EPerson>(ENDPOINTS.EPERSONS, payload),
+    clientRequest.post<EPerson>(ENDPOINTS.EPERSONS, payload),
 
   /**
    * Updates an eperson.
@@ -37,7 +37,7 @@ export const epersonsFunctions = {
    * @returns {Promise<EPerson>} The updated eperson.
    */
   update: (epersonId: string, payload: Payload): Promise<EPerson> =>
-    request.patch<EPerson>(`${ENDPOINTS.EPERSONS}/${epersonId}`, payload),
+    clientRequest.patch<EPerson>(`${ENDPOINTS.EPERSONS}/${epersonId}`, payload),
 
   /**
    * Deletes an eperson by their UUID.
@@ -45,7 +45,7 @@ export const epersonsFunctions = {
    * @returns {Promise<void>}
    */
   deleteById: (epersonId: string): Promise<void> =>
-    request.delete<void>(`${ENDPOINTS.EPERSONS}/${epersonId}`),
+    clientRequest.delete<void>(`${ENDPOINTS.EPERSONS}/${epersonId}`),
 
   /**
    * Searches for epersons by email.
@@ -56,7 +56,9 @@ export const epersonsFunctions = {
   byEmail: (
     email: string
   ): Promise<EPerson> => // This endpoint might vary
-    request.get<EPerson>(`${ENDPOINTS.EPERSONS}/search/byEmail?email=${encodeURIComponent(email)}`),
+    clientRequest.get<EPerson>(
+      `${ENDPOINTS.EPERSONS}/search/byEmail?email=${encodeURIComponent(email)}`
+    ),
 
   /**
    * Retrieves the currently authenticated EPerson.
@@ -71,7 +73,7 @@ export const epersonsFunctions = {
         return statusResponse._embedded.eperson
       }
       // Fallback or alternative if DSpace provides a direct /api/eperson/current or similar
-      // const currentEPerson = await request.get<EPerson>(`${ENDPOINTS.EPERSONS}/current`);
+      // const currentEPerson = await clientRequest.get<EPerson>(`${ENDPOINTS.EPERSONS}/current`);
       // return currentEPerson;
       return null
     } catch {
@@ -90,5 +92,5 @@ export const epersonsFunctions = {
     size: number = 20,
     page: number = 0
   ): Promise<{ _embedded: { groups: Group[] } }> =>
-    request.get<any>(`${ENDPOINTS.EPERSONS}/${epersonId}/groups?size=${size}&page=${page}`)
+    clientRequest.get<any>(`${ENDPOINTS.EPERSONS}/${epersonId}/groups?size=${size}&page=${page}`)
 }

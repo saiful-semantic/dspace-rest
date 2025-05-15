@@ -1,6 +1,6 @@
 import Payload from './utils/payload'
 import * as Types from './lib/dspace.types'
-import { initClient, apiClient, request as clientRequest } from './lib/client'
+import { initClient, apiClient, clientRequest } from './lib/client'
 import { AxiosInstance } from 'axios'
 import { authFunctions } from './lib/modules/auth'
 import { coreFunctions } from './lib/modules/core'
@@ -40,9 +40,9 @@ const dspaceApi = {
     return apiClient
   },
   /**
-   * Provides direct access to request methods if needed.
+   * Provides direct access to clientRequest methods if needed.
    */
-  request: clientRequest // request is imported from client.ts
+  clientRequest // clientRequest is imported from client.ts
 }
 
 export default dspaceApi

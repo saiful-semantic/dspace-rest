@@ -1,6 +1,6 @@
 import { Process, Processes } from '../dspace.types'
 import { ENDPOINTS } from '../../constants'
-import { apiClient, request, responseBody } from '../client'
+import { apiClient, clientRequest, responseBody } from '../client'
 
 export const processesFunctions = {
   /**
@@ -11,7 +11,7 @@ export const processesFunctions = {
    * @returns {Promise<Processes>}
    */
   all: (size: number = 20, page: number = 0): Promise<Processes> =>
-    request.get<Processes>(`${ENDPOINTS.PROCESSES}?size=${size}&page=${page}`),
+    clientRequest.get<Processes>(`${ENDPOINTS.PROCESSES}?size=${size}&page=${page}`),
 
   /**
    * Retrieves a specific process by its ID.
@@ -21,7 +21,7 @@ export const processesFunctions = {
   byId: (
     processId: string | number
   ): Promise<Process> => // Process ID is often numeric
-    request.get<Process>(`${ENDPOINTS.PROCESSES}/${processId}`),
+    clientRequest.get<Process>(`${ENDPOINTS.PROCESSES}/${processId}`),
 
   /**
    * Starts a new process (e.g., run a script).
@@ -51,10 +51,10 @@ export const processesFunctions = {
     //   script: scriptName,
     //   parameters: parameters.map(p => ({ name: p.key, value: p.value }))
     // };
-    // return request.post<Process>(ENDPOINTS.PROCESSES, payload);
+    // return clientRequest.post<Process>(ENDPOINTS.PROCESSES, payload);
 
     // Using query params for this example:
-    return request.post<Process>(`${ENDPOINTS.PROCESSES}?${queryParams.toString()}`, {})
+    return clientRequest.post<Process>(`${ENDPOINTS.PROCESSES}?${queryParams.toString()}`, {})
   },
 
   /**
@@ -63,7 +63,7 @@ export const processesFunctions = {
    * @returns {Promise<void>}
    */
   deleteById: (processId: string | number): Promise<void> =>
-    request.delete<void>(`${ENDPOINTS.PROCESSES}/${processId}`),
+    clientRequest.delete<void>(`${ENDPOINTS.PROCESSES}/${processId}`),
 
   /**
    * Retrieves the log/output of a specific process.

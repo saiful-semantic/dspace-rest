@@ -8,7 +8,7 @@ export const coreFunctions = {
    * @returns {Promise<ApiInfo>}
    */
   info: async (): Promise<ApiInfo> => {
-    // Directly using apiClient.get here as an example, or could use request.get
+    // Directly using apiClient.get here as an example, or could use clientRequest.get
     const response = await apiClient.get<ApiInfo>(ENDPOINTS.BASE)
     return response.data
   }

@@ -1,6 +1,6 @@
 import { ResourcePolicies, ResourcePolicy } from '../dspace.types'
 import { ENDPOINTS } from '../../constants'
-import { Payload, request } from '../client'
+import { Payload, clientRequest } from '../client'
 
 export const resourcePoliciesFunctions = {
   /**
@@ -15,7 +15,7 @@ export const resourcePoliciesFunctions = {
     size: number = 20,
     page: number = 0
   ): Promise<ResourcePolicies> =>
-    request.get<ResourcePolicies>(
+    clientRequest.get<ResourcePolicies>(
       `${ENDPOINTS.RESOURCE_POLICIES}/search/object?uuid=${objectUuid}&size=${size}&page=${page}`
     ),
   // The search path might vary, e.g. /authz/resourcepolicies?resource=<uuid>
@@ -26,7 +26,7 @@ export const resourcePoliciesFunctions = {
    * @returns {Promise<ResourcePolicy>}
    */
   byId: (policyId: string | number): Promise<ResourcePolicy> =>
-    request.get<ResourcePolicy>(`${ENDPOINTS.RESOURCE_POLICIES}/${policyId}`),
+    clientRequest.get<ResourcePolicy>(`${ENDPOINTS.RESOURCE_POLICIES}/${policyId}`),
 
   /**
    * Creates a new resource policy for a DSpace object.
@@ -45,7 +45,7 @@ export const resourcePoliciesFunctions = {
     // Example: payload might include `resource: "/api/core/items/${objectUuid}"`
     // Or, the API might expect POSTing to `/api/core/items/${objectUuid}/resourcePolicies`
     // For this example, let's assume POSTing to the main endpoint with object UUID as a query param.
-    return request.post<ResourcePolicy>(
+    return clientRequest.post<ResourcePolicy>(
       `${ENDPOINTS.RESOURCE_POLICIES}?resource=${objectUuid}`,
       payload
     )
@@ -58,7 +58,7 @@ export const resourcePoliciesFunctions = {
    * @returns {Promise<ResourcePolicy>} The updated resource policy.
    */
   update: (policyId: string | number, payload: Payload): Promise<ResourcePolicy> =>
-    request.patch<ResourcePolicy>(`${ENDPOINTS.RESOURCE_POLICIES}/${policyId}`, payload), // PATCH is common for updates
+    clientRequest.patch<ResourcePolicy>(`${ENDPOINTS.RESOURCE_POLICIES}/${policyId}`, payload), // PATCH is common for updates
 
   /**
    * Deletes a resource policy by its ID.
@@ -66,5 +66,5 @@ export const resourcePoliciesFunctions = {
    * @returns {Promise<void>}
    */
   deleteById: (policyId: string | number): Promise<void> =>
-    request.delete<void>(`${ENDPOINTS.RESOURCE_POLICIES}/${policyId}`)
+    clientRequest.delete<void>(`${ENDPOINTS.RESOURCE_POLICIES}/${policyId}`)
 }
