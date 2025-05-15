@@ -11,6 +11,56 @@ describe('DSpace API Auth Module Tests', () => {
   const userAgent = 'TestAgent/1.0'
   let client: AxiosInstance // This will be the Axios instance from dspaceApiMain.getClient()
 
+  // Helper functions to reduce code duplication
+  const setupLoginTest = (version: number) => {
+    setBaseVersion(version)
+    const csrfEndpoint = version === 7 ? ENDPOINTS.CSRF_DSPACE7 : ENDPOINTS.CSRF_DSPACE8
+    const csrfToken = `csrf-token-${version}`
+    const authToken = `Bearer test-token${version === 7 ? '-7' : ''}`
+
+    const getStub = sinon.stub(client, 'get')
+    getStub
+      .withArgs(csrfEndpoint)
+      .resolves({ headers: { 'dspace-xsrf-token': csrfToken }, data: {} })
+
+    const postStub = sinon
+      .stub(client, 'post')
+      .withArgs(ENDPOINTS.LOGIN)
+      .resolves({ headers: { authorization: authToken }, data: {} })
+
+    return { getStub, postStub, csrfToken, authToken, csrfEndpoint }
+  }
+
+  const setupLoginFailureTest = (version: number) => {
+    setBaseVersion(version)
+    const csrfEndpoint = version === 7 ? ENDPOINTS.CSRF_DSPACE7 : ENDPOINTS.CSRF_DSPACE8
+    const errorMessage = `CSRF not found for DSpace ${version}`
+
+    const getStub = sinon.stub(client, 'get')
+    getStub.withArgs(csrfEndpoint).rejects(new DSpaceApiError(errorMessage, 404))
+
+    const postStub = sinon.stub(client, 'post')
+
+    return { getStub, postStub, csrfEndpoint }
+  }
+
+  const assertHeadersNotSet = () => {
+    ok(
+      !client.defaults.headers.common['Authorization'],
+      'Authorization header should not be set on failure'
+    )
+    ok(
+      !client.defaults.headers.common['X-XSRF-Token'],
+      'X-XSRF-Token header should not be set on failure'
+    )
+  }
+
+  const assertSuccessfulLogin = (result: boolean, authToken: string, csrfToken: string) => {
+    equal(result, true)
+    equal(client.defaults.headers.common['Authorization'], authToken)
+    equal(client.defaults.headers.common['X-XSRF-Token'], csrfToken)
+  }
+
   beforeEach(() => {
     // Reset the base version before each test
     setBaseVersion(0)
@@ -26,23 +76,10 @@ describe('DSpace API Auth Module Tests', () => {
   })
 
   it('should handle successful DSpace 8+ login and set auth headers', async () => {
-    // Set the base version to 8 for this test
-    setBaseVersion(8)
-
-    const getStub = sinon
-      .stub(client, 'get') // Stub the shared client instance
-      .withArgs(ENDPOINTS.CSRF_DSPACE8)
-      .resolves({ headers: { 'dspace-xsrf-token': 'csrf-token-8' }, data: {} })
-
-    const postStub = sinon
-      .stub(client, 'post')
-      .withArgs(ENDPOINTS.LOGIN)
-      .resolves({ headers: { authorization: 'Bearer test-token' }, data: {} })
+    const { getStub, postStub, csrfToken, authToken } = setupLoginTest(8)
 
     const result = await dspaceApiMain.auth.login('testuser', 'password')
-    equal(result, true)
-    equal(client.defaults.headers.common['Authorization'], 'Bearer test-token')
-    equal(client.defaults.headers.common['X-XSRF-Token'], 'csrf-token-8')
+    assertSuccessfulLogin(result, authToken, csrfToken)
 
     sinon.assert.calledOnce(getStub)
     sinon.assert.calledOnce(postStub)
@@ -50,39 +87,18 @@ describe('DSpace API Auth Module Tests', () => {
   })
 
   it('should use DSpace 7 login when version is 7', async () => {
-    // Set the base version to 7 for this test
-    setBaseVersion(7)
-
-    const getStub = sinon.stub(client, 'get')
-    getStub
-      .withArgs(ENDPOINTS.CSRF_DSPACE7)
-      .resolves({ headers: { 'dspace-xsrf-token': 'csrf-token-7' }, data: {} })
-
-    const postStub = sinon
-      .stub(client, 'post')
-      .withArgs(ENDPOINTS.LOGIN)
-      .resolves({ headers: { authorization: 'Bearer test-token-7' }, data: {} })
+    const { getStub, postStub, csrfToken, authToken, csrfEndpoint } = setupLoginTest(7)
 
     const result = await dspaceApiMain.auth.login('testuser', 'password')
-    equal(result, true)
-    equal(client.defaults.headers.common['Authorization'], 'Bearer test-token-7')
-    equal(client.defaults.headers.common['X-XSRF-Token'], 'csrf-token-7')
+    assertSuccessfulLogin(result, authToken, csrfToken)
 
     sinon.assert.notCalled(getStub.withArgs(ENDPOINTS.CSRF_DSPACE8))
-    sinon.assert.calledWith(getStub, ENDPOINTS.CSRF_DSPACE7)
+    sinon.assert.calledWith(getStub, csrfEndpoint)
     sinon.assert.calledOnce(postStub)
   })
 
   it('should reject with error when DSpace 8+ login fails', async () => {
-    // Set the base version to 8 for this test
-    setBaseVersion(8)
-
-    const getStub = sinon.stub(client, 'get')
-    getStub
-      .withArgs(ENDPOINTS.CSRF_DSPACE8)
-      .rejects(new DSpaceApiError('CSRF not found for DSpace 8+', 404))
-
-    const postStub = sinon.stub(client, 'post')
+    const { postStub } = setupLoginFailureTest(8)
 
     await rejects(
       async () => await dspaceApiMain.auth.login('wronguser', 'wrongpass'),
@@ -93,27 +109,12 @@ describe('DSpace API Auth Module Tests', () => {
       }
     )
 
-    ok(
-      !client.defaults.headers.common['Authorization'],
-      'Authorization header should not be set on failure'
-    )
-    ok(
-      !client.defaults.headers.common['X-XSRF-Token'],
-      'X-XSRF-Token header should not be set on failure'
-    )
+    assertHeadersNotSet()
     sinon.assert.notCalled(postStub)
   })
 
   it('should reject with error when DSpace 7 login fails', async () => {
-    // Set the base version to 7 for this test
-    setBaseVersion(7)
-
-    const getStub = sinon.stub(client, 'get')
-    getStub
-      .withArgs(ENDPOINTS.CSRF_DSPACE7)
-      .rejects(new DSpaceApiError('CSRF not found for DSpace 7', 404))
-
-    const postStub = sinon.stub(client, 'post')
+    const { postStub } = setupLoginFailureTest(7)
 
     await rejects(
       async () => await dspaceApiMain.auth.login('wronguser', 'wrongpass'),
@@ -124,14 +125,7 @@ describe('DSpace API Auth Module Tests', () => {
       }
     )
 
-    ok(
-      !client.defaults.headers.common['Authorization'],
-      'Authorization header should not be set on failure'
-    )
-    ok(
-      !client.defaults.headers.common['X-XSRF-Token'],
-      'X-XSRF-Token header should not be set on failure'
-    )
+    assertHeadersNotSet()
     sinon.assert.notCalled(postStub)
   })
 
@@ -169,14 +163,7 @@ describe('DSpace API Auth Module Tests', () => {
 
     await dspaceApiMain.auth.logout()
 
-    ok(
-      !client.defaults.headers.common['Authorization'],
-      'Authorization header should be cleared after logout'
-    )
-    ok(
-      !client.defaults.headers.common['X-XSRF-Token'],
-      'X-XSRF-Token header should be cleared after logout'
-    )
+    assertHeadersNotSet()
     sinon.assert.calledOnce(postStub)
   })
 
@@ -195,14 +182,7 @@ describe('DSpace API Auth Module Tests', () => {
     // Given the current implementation, we just await and then check headers.
     await dspaceApiMain.auth.logout()
 
-    ok(
-      !client.defaults.headers.common['Authorization'],
-      'Authorization header should be cleared even if API logout fails'
-    )
-    ok(
-      !client.defaults.headers.common['X-XSRF-Token'],
-      'X-XSRF-Token header should be cleared even if API logout fails'
-    )
+    assertHeadersNotSet()
   })
 
   it('should get authentication status and update CSRF token', async () => {
