@@ -47,4 +47,29 @@ describe('DSpace API Client Tests', () => {
     dspaceApiMain.setBaseVersion(newVersion)
     strictEqual(dspaceApiMain.getBaseVersion(), newVersion)
   })
+
+  it('should set and get authorization headers', () => {
+    const authToken = 'Bearer test-token'
+    const csrfToken = 'csrf-test-token'
+
+    dspaceApiMain.setAuthorization(authToken, csrfToken)
+
+    const client = dspaceApiMain.getClient()
+    equal(client.defaults.headers.common['Authorization'], authToken)
+    equal(client.defaults.headers.common['X-XSRF-Token'], csrfToken)
+    equal(dspaceApiMain.getAuthorization(), authToken)
+  })
+
+  it('should clear authorization headers', () => {
+    // First set the headers
+    const authToken = 'Bearer test-token'
+    dspaceApiMain.setAuthorization(authToken)
+
+    // Then clear them
+    dspaceApiMain.clearAuthorization()
+
+    const client = dspaceApiMain.getClient()
+    ok(!client.defaults.headers.common['Authorization'])
+    ok(!client.defaults.headers.common['X-XSRF-Token'])
+  })
 })

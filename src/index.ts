@@ -7,7 +7,8 @@ import {
   getBaseVersion,
   setBaseVersion,
   getAuthorization,
-  setAuthorization
+  setAuthorization,
+  clearAuthorization
 } from './lib/client'
 import { authFunctions } from './lib/modules/auth'
 import { coreFunctions } from './lib/modules/core'
@@ -39,6 +40,7 @@ const dspaceApi = {
   clientRequest,
   getBaseVersion,
   setBaseVersion,
+  clearAuthorization,
   setAuthorization,
   getAuthorization
 }
