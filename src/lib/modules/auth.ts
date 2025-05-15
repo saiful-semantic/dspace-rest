@@ -2,12 +2,14 @@ import qs from 'node:querystring'
 import {
   apiClient,
   clearAuthorization,
+  clientRequest,
   DSpaceApiError,
   getBaseVersion,
   setAuthorization
 } from '../client'
 import { ENDPOINTS } from '../../constants'
 import { coreFunctions } from './core'
+import { AuthStatus } from '../dspace.types'
 
 export const authFunctions = {
   /**
@@ -86,16 +88,9 @@ export const authFunctions = {
 
   /**
    * Checks the current authentication status.
-   * @returns {Promise<any>} The status response.
+   * @returns {Promise<AuthStatus>} The status response.
    */
-  status: async (): Promise<unknown> => {
-    const response = await apiClient.get(ENDPOINTS.STATUS)
-    const csrfToken =
-      (response.headers['dspace-xsrf-token'] as string | undefined) ||
-      (response.headers['xsrf-token'] as string | undefined)
-    if (csrfToken && apiClient?.defaults?.headers?.common) {
-      apiClient.defaults.headers.common['X-XSRF-Token'] = csrfToken
-    }
-    return response.data
+  status: async (): Promise<AuthStatus> => {
+    return clientRequest.get<AuthStatus>(ENDPOINTS.STATUS)
   }
 }

@@ -214,21 +214,11 @@ describe('DSpace API Auth Module Tests', () => {
 
   it('should get authentication status and update CSRF token', async () => {
     const mockStatusResponse = { authenticated: true, epeopleId: 'user123' }
-    const newCsrfToken = 'new-csrf-from-status'
-    sinon
-      .stub(client, 'get')
-      .withArgs(ENDPOINTS.STATUS)
-      .resolves({
-        data: mockStatusResponse,
-        headers: { 'dspace-xsrf-token': newCsrfToken }
-      })
+    sinon.stub(client, 'get').withArgs(ENDPOINTS.STATUS).resolves({
+      data: mockStatusResponse
+    })
 
     const status = await dspaceApiMain.auth.status()
     deepEqual(status, mockStatusResponse)
-    equal(
-      client.defaults.headers.common['X-XSRF-Token'],
-      newCsrfToken,
-      'CSRF token should be updated from status response'
-    )
   })
 })

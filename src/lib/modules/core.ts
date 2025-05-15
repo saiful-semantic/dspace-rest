@@ -8,7 +8,7 @@ export const coreFunctions = {
    * @returns {Promise<ApiInfo>}
    */
   info: async (): Promise<ApiInfo> => {
-    return await clientRequest.get<ApiInfo>(ENDPOINTS.BASE)
+    return clientRequest.get<ApiInfo>(ENDPOINTS.BASE)
   },
 
   /**
