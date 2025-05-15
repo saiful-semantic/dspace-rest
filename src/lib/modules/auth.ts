@@ -1,6 +1,7 @@
 import qs from 'node:querystring'
-import { apiClient, DSpaceApiError } from '../client'
+import { apiClient, DSpaceApiError, getBaseVersion } from '../client'
 import { ENDPOINTS } from '../../constants'
+import { coreFunctions } from './core'
 
 export const authFunctions = {
   /**
@@ -45,15 +46,18 @@ export const authFunctions = {
     }
 
     try {
-      return await tryLoginStrategy(ENDPOINTS.CSRF_DSPACE8, 'DSpace 8+')
-    } catch {
+      // Check the base version of DSpace
+      const baseVersion = getBaseVersion() || (await coreFunctions.extractBaseVersion())
+      if (baseVersion < 8) {
+        return await tryLoginStrategy(ENDPOINTS.CSRF_DSPACE7, 'DSpace 7')
+      } else {
+        return await tryLoginStrategy(ENDPOINTS.CSRF_DSPACE8, 'DSpace 8+')
+      }
+    } catch (error: unknown) {
       delete apiClient.defaults.headers.common['Authorization']
       delete apiClient.defaults.headers.common['X-XSRF-Token']
-      try {
-        return await tryLoginStrategy(ENDPOINTS.CSRF_DSPACE7, 'DSpace 7')
-      } catch {
-        return false
-      }
+      const errorMessage = (error as Error).message || 'Unknown error'
+      return Promise.reject(new DSpaceApiError(errorMessage, 401, error))
     }
   },
 

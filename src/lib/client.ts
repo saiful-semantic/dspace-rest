@@ -29,7 +29,7 @@ export const getApiClient = (): AxiosInstance => {
 }
 
 // --- Base Version Handling ---
-export let baseVersion: number | undefined
+let baseVersion: number | undefined
 export const getBaseVersion = (): number | undefined => {
   return baseVersion
 }
