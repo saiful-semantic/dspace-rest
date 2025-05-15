@@ -1,5 +1,11 @@
 import qs from 'node:querystring'
-import { apiClient, DSpaceApiError, getBaseVersion } from '../client'
+import {
+  apiClient,
+  clearAuthorization,
+  DSpaceApiError,
+  getBaseVersion,
+  setAuthorization
+} from '../client'
 import { ENDPOINTS } from '../../constants'
 import { coreFunctions } from './core'
 
@@ -36,13 +42,17 @@ export const authFunctions = {
       })
 
       if (loginRes.headers.authorization) {
-        apiClient.defaults.headers.common['Authorization'] = loginRes.headers
-          .authorization as string
+        const authToken = loginRes.headers.authorization as string
+        setAuthorization(authToken, csrfToken)
+        return true
+      } else {
+        // If login is successful (e.g. 200 OK) but no authorization header, it's an issue.
+        throw new DSpaceApiError(
+          `Login successful but no authorization token received for ${versionLabel}.`,
+          500, // Or an appropriate status code indicating an unexpected server response
+          loginRes
+        )
       }
-      if (csrfToken) {
-        apiClient.defaults.headers.common['X-XSRF-Token'] = csrfToken
-      }
-      return true
     }
 
     try {
@@ -54,9 +64,8 @@ export const authFunctions = {
         return await tryLoginStrategy(ENDPOINTS.CSRF_DSPACE8, 'DSpace 8+')
       }
     } catch (error: unknown) {
-      delete apiClient.defaults.headers.common['Authorization']
-      delete apiClient.defaults.headers.common['X-XSRF-Token']
-      const errorMessage = (error as Error).message || 'Unknown error'
+      clearAuthorization()
+      const errorMessage = (error as Error).message || 'Unknown error during login'
       return Promise.reject(new DSpaceApiError(errorMessage, 401, error))
     }
   },
@@ -71,8 +80,7 @@ export const authFunctions = {
     } catch {
       // console.error('Logout request failed, but clearing auth headers anyway.')
     } finally {
-      delete apiClient.defaults.headers.common['Authorization']
-      delete apiClient.defaults.headers.common['X-XSRF-Token']
+      clearAuthorization()
     }
   },
 

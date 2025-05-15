@@ -37,6 +37,18 @@ export const setBaseVersion = (version: number): void => {
   baseVersion = version
 }
 
+// --- Authentication Handling ---
+
+export const clearAuthorization = (): void => {
+  delete apiClient.defaults.headers.common['Authorization']
+  delete apiClient.defaults.headers.common['X-XSRF-Token']
+}
+
+export const setAuthorization = (authToken: string, csrfToken: string): void => {
+  apiClient.defaults.headers.common['Authorization'] = authToken
+  apiClient.defaults.headers.common['X-XSRF-Token'] = csrfToken
+}
+
 /**
  * Initializes the DSpace API client with a base URL and user agent.
  * @param {string} baseUrl - The base URL of the DSpace instance.

@@ -2,7 +2,7 @@ import { deepEqual, equal, ok, rejects } from 'assert'
 import sinon from 'sinon'
 import { AxiosInstance } from 'axios'
 import dspaceApiMain from '../../index'
-import { DSpaceApiError, setBaseVersion } from '../client'
+import { DSpaceApiError, setBaseVersion, clearAuthorization, setAuthorization } from '../client'
 import { ENDPOINTS } from '../../constants'
 import { coreFunctions } from './core'
 
@@ -182,6 +182,34 @@ describe('DSpace API Auth Module Tests', () => {
     // Given the current implementation, we just await and then check headers.
     await dspaceApiMain.auth.logout()
 
+    assertHeadersNotSet()
+  })
+
+  it('should throw error when login response has no authorization token', async () => {
+    setBaseVersion(8)
+    const csrfToken = 'csrf-token-8'
+
+    // Stub the CSRF request
+    sinon
+      .stub(client, 'get')
+      .withArgs(ENDPOINTS.CSRF_DSPACE8)
+      .resolves({ headers: { 'dspace-xsrf-token': csrfToken }, data: {} })
+
+    // Stub the login request to return a response without authorization header
+    sinon.stub(client, 'post').withArgs(ENDPOINTS.LOGIN).resolves({ headers: {}, data: {} }) // No authorization header
+
+    // The login should throw an error
+    await rejects(
+      async () => await dspaceApiMain.auth.login('testuser', 'password'),
+      (error: Error) => {
+        ok(error instanceof DSpaceApiError)
+        equal(error.status, 401)
+        ok(error.message.includes('no authorization token received'))
+        return true
+      }
+    )
+
+    // Headers should not be set after a failed login
     assertHeadersNotSet()
   })
 
