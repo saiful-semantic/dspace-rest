@@ -5,7 +5,9 @@ import {
   clientRequest,
   getApiClient,
   getBaseVersion,
-  setBaseVersion
+  setBaseVersion,
+  getAuthorization,
+  setAuthorization
 } from './lib/client'
 import { authFunctions } from './lib/modules/auth'
 import { coreFunctions } from './lib/modules/core'
@@ -36,7 +38,9 @@ const dspaceApi = {
   getClient: getApiClient,
   clientRequest,
   getBaseVersion,
-  setBaseVersion
+  setBaseVersion,
+  setAuthorization,
+  getAuthorization
 }
 
 export default dspaceApi
