@@ -29,7 +29,7 @@ describe('CLI: DSpace Client Service', () => {
   it('should throw error if api_url is not verified', async () => {
     configStub.returns({ api_url: 'http://test', verified: false }) // URL not verified
 
-    await assert.rejects(() => authCommands.handleLogin(), {
+    await assert.rejects(() => dspaceClient.initClient(), {
       name: 'Error',
       message: `Verify the DSpace REST API URL first with 'config:verify'`
     })
