@@ -2,9 +2,8 @@ import { deepEqual, equal, ok, rejects } from 'assert'
 import sinon from 'sinon'
 import { AxiosInstance } from 'axios'
 import dspaceApiMain from '../../index'
-import { DSpaceApiError, setBaseVersion, clearAuthorization, setAuthorization } from '../client'
+import { DSpaceApiError, setBaseVersion } from '../client'
 import { ENDPOINTS } from '../../constants'
-import { coreFunctions } from './core'
 
 describe('DSpace API Auth Module Tests', () => {
   const baseUrl = 'https://example.edu/server'
@@ -134,7 +133,7 @@ describe('DSpace API Auth Module Tests', () => {
     // setBaseVersion(0)
 
     // Stub extractBaseVersion to return 7
-    const extractVersionStub = sinon.stub(coreFunctions, 'extractBaseVersion').resolves(7)
+    const extractVersionStub = sinon.stub(dspaceApiMain.core, 'extractBaseVersion').resolves(7)
 
     const getStub = sinon.stub(client, 'get')
     getStub
