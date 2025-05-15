@@ -21,6 +21,22 @@ export class DSpaceApiError extends Error {
 export let apiClient: AxiosInstance
 export let internalBaseUrl: string // Store baseUrl internally
 
+export const getApiClient = (): AxiosInstance => {
+  if (!apiClient) {
+    throw new Error('API client not initialized. Please call initClient() first.')
+  }
+  return apiClient
+}
+
+// --- Base Version Handling ---
+export let baseVersion: number | undefined
+export const getBaseVersion = (): number | undefined => {
+  return baseVersion
+}
+export const setBaseVersion = (version: number): void => {
+  baseVersion = version
+}
+
 /**
  * Initializes the DSpace API client with a base URL and user agent.
  * @param {string} baseUrl - The base URL of the DSpace instance.
