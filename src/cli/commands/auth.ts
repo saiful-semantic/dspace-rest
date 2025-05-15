@@ -129,7 +129,6 @@ export const authCommands = {
     try {
       await dspaceClient.ensureAuth()
       const authStatus = await dspaceClient.status()
-      console.log(authStatus)
       if (authStatus.authenticated) {
         console.log(`✅ You are logged in as: ${authStatus._embedded?.eperson?.email}`)
         console.log(`  Link: ${authStatus._links?.eperson?.href}`)

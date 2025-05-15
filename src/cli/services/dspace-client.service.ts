@@ -10,6 +10,7 @@ export const dspaceClient = {
   status: dspaceApi.auth.status,
   setAuthorization: dspaceApi.setAuthorization,
   getAuthorization: dspaceApi.getAuthorization,
+  clearAuthorization: dspaceApi.clearAuthorization,
 
   async showAllItems(): Promise<void> {
     try {
@@ -233,9 +234,14 @@ export const dspaceClient = {
 
     let authToken = await storageService.auth.get<string>('authToken')
     if (authToken) {
-      console.log('Already logged-in. Using cached authorization token.')
       this.setAuthorization(authToken)
-      return
+      const authStatus = await dspaceClient.status()
+      if (authStatus.authenticated) {
+        return
+      } else {
+        await storageService.auth.delete('authToken')
+        this.clearAuthorization()
+      }
     }
 
     const credentials = await storageService.auth.get<{ username: string; password: string }>(
