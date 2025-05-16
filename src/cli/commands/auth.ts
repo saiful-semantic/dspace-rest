@@ -120,9 +120,14 @@ export const authCommands = {
           console.log(`✅ You are logged in as: ${authStatus._embedded?.eperson?.email}`)
           console.log(`  Link: ${authStatus._links?.eperson?.href}`)
           return
+        } else {
+          console.log('❌ Auth token is invalid or expired. Please log in again.')
+          await storageService.auth.delete('authToken')
+          dspaceClient.clearAuthorization()
         }
+      } else {
+        console.log('❌ You are not logged in to DSpace.')
       }
-      console.log('❌ You are not logged in to DSpace.')
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : String(e)
       console.error(`❌ Failed to check login status: ${errorMessage}`)
