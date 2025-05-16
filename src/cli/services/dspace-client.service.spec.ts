@@ -2,19 +2,22 @@ import { strict as assert } from 'assert'
 import sinon from 'sinon'
 import { dspaceClient } from './dspace-client.service'
 import { storageService } from './storage.service'
-// import { authCommands } from '../commands/auth'
 
 describe('CLI: DSpace Client Service', () => {
   let configStub: sinon.SinonStub
   let authGetStub: sinon.SinonStub
-  // let initStub: sinon.SinonStub
-  // let loginStub: sinon.SinonStub
+  let authSetStub: sinon.SinonStub
+  let initStub: sinon.SinonStub
+  let loginStub: sinon.SinonStub
+  let getAuthorizationStub: sinon.SinonStub
 
   beforeEach(() => {
     configStub = sinon.stub(storageService.config, 'load')
     authGetStub = sinon.stub(storageService.auth, 'get')
-    // initStub = sinon.stub(dspaceClient, 'init')
-    // loginStub = sinon.stub(dspaceClient, 'login')
+    authSetStub = sinon.stub(storageService.auth, 'set')
+    initStub = sinon.stub(dspaceClient, 'init')
+    loginStub = sinon.stub(dspaceClient, 'login')
+    getAuthorizationStub = sinon.stub(dspaceClient, 'getAuthorization')
   })
 
   afterEach(() => {
@@ -41,13 +44,20 @@ describe('CLI: DSpace Client Service', () => {
     await assert.rejects(() => dspaceClient.ensureAuth(), /No saved credentials/)
   })
 
-  // TODO: fix tests for authToken
-  // it('should call init and login with credentials', async () => {
-  //   configStub.returns({ api_url: 'http://test', verified: true })
-  //   authGetStub.withArgs('credentials').returns({ username: 'user', password: 'pass' })
-  //   loginStub.resolves()
-  //   await dspaceClient.ensureAuth()
-  //   assert.ok(initStub.calledWith('http://test'))
-  //   assert.ok(loginStub.calledWith('user', 'pass'))
-  // })
+  it('should call init and login with credentials', async () => {
+    configStub.returns({ api_url: 'http://test', verified: true })
+    authGetStub.withArgs('credentials').returns({ username: 'user', password: 'pass' })
+    authGetStub.withArgs('authToken').returns(undefined)
+    loginStub.resolves()
+    getAuthorizationStub.returns('Bearer mock-token')
+    authSetStub.resolves()
+
+    await dspaceClient.ensureAuth()
+
+    assert.ok(initStub.calledWith('http://test'))
+    assert.ok(loginStub.calledWith('user', 'pass'))
+    assert.ok(getAuthorizationStub.called)
+    assert.ok(authGetStub.calledWith('authToken'))
+    assert.ok(authSetStub.calledWith('authToken', 'Bearer mock-token'))
+  })
 })
