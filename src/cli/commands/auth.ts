@@ -11,19 +11,8 @@ interface Credential {
 export const authCommands = {
   async handleLogin(): Promise<void> {
     try {
-      let authToken = await storageService.auth.get<string>('authToken')
-      if (authToken) {
-        console.log('Found cached auth token. Checking login status...')
-        await dspaceClient.ensureInit()
-        dspaceClient.setAuthorization(authToken)
-        const authStatus = await dspaceClient.status()
-        if (authStatus.authenticated) {
-          console.log(`✅ You are already logged in`)
-          return
-        } else {
-          return await dspaceClient.ensureAuth()
-        }
-      } else {
+      const loginStatus = await this.verifyLogin(true)
+      if (!loginStatus) {
         const credentials = await storageService.auth.get<Credential>('credentials')
         if (!credentials) {
           console.log('No saved credentials found. Please log in.')
@@ -133,29 +122,47 @@ export const authCommands = {
   },
 
   async handleStatus(): Promise<void> {
-    await dspaceClient.ensureInit()
-
     try {
-      let authToken = await storageService.auth.get<string>('authToken')
-      if (authToken) {
-        console.log('Found cached auth token. Checking login status...')
-        dspaceClient.setAuthorization(authToken)
-        const authStatus = await dspaceClient.status()
-        if (authStatus.authenticated) {
-          console.log(`✅ You are logged in as: ${authStatus._embedded?.eperson?.email}`)
-          console.log(`  Link: ${authStatus._links?.eperson?.href}`)
-          return
-        } else {
-          console.log('❌ Auth token is invalid or expired. Please log in again.')
-          await storageService.auth.delete('authToken')
-          dspaceClient.clearAuthorization()
-        }
-      } else {
+      const loginStatus = await this.verifyLogin()
+      if (!loginStatus) {
         console.log('❌ You are not logged in to DSpace.')
       }
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : String(e)
       console.error(`❌ Failed to check login status: ${errorMessage}`)
+    }
+  },
+
+  async verifyLogin(reLogin = false): Promise<boolean> {
+    try {
+      let authToken = await storageService.auth.get<string>('authToken')
+      if (authToken) {
+        await dspaceClient.ensureInit()
+        dspaceClient.setAuthorization(authToken)
+        const authStatus = await dspaceClient.status()
+        if (authStatus.authenticated) {
+          console.log(`✅ You are logged in as: ${authStatus._embedded?.eperson?.email}`)
+          console.log(`  Link: ${authStatus._links?.eperson?.href}`)
+          return true
+        } else {
+          return await tryLogin()
+        }
+      } else {
+        return await tryLogin()
+      }
+    } catch {
+      return false
+    }
+
+    async function tryLogin() {
+      if (reLogin) {
+        await dspaceClient.ensureAuth()
+        return true
+      } else {
+        await storageService.auth.delete('authToken')
+        dspaceClient.clearAuthorization()
+        return false
+      }
     }
   }
 }
