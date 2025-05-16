@@ -3,21 +3,38 @@ import { promptService } from '../services/prompt.service'
 import { dspaceClient } from '../services/dspace-client.service'
 import { storageService } from '../services/storage.service'
 
+interface Credential {
+  username: string
+  password: string
+}
+
 export const authCommands = {
   async handleLogin(): Promise<void> {
-    const username = await promptService.prompt('Username:')
-    if (!username) throw new Error('Username cannot be empty.')
-    const password = await promptService.prompt('Password:', true)
-    if (!password) throw new Error('Password cannot be empty.')
-
     try {
-      await dspaceClient.ensureInit()
-      await dspaceClient.login(username, password)
-
-      const authToken = dspaceClient.getAuthorization()
-      await storageService.auth.set('authToken', authToken)
-      await storageService.auth.set('credentials', { username, password }) // This will handle master pass setup/prompting
-      console.log('✅ Login successful! Credentials stored securely.')
+      let authToken = await storageService.auth.get<string>('authToken')
+      if (authToken) {
+        console.log('Found cached auth token. Checking login status...')
+        await dspaceClient.ensureInit()
+        dspaceClient.setAuthorization(authToken)
+        const authStatus = await dspaceClient.status()
+        if (authStatus.authenticated) {
+          console.log(`✅ You are already logged in`)
+          return
+        } else {
+          return await dspaceClient.ensureAuth()
+        }
+      } else {
+        const credentials = await storageService.auth.get<Credential>('credentials')
+        if (!credentials) {
+          console.log('No saved credentials found. Please log in.')
+          const { username, password } = await setCredentials()
+          await storageService.auth.set('credentials', { username, password }) // This will handle master pass setup/prompting
+          console.log('✅ Credentials stored securely.')
+        }
+        // At this point, credentials are either loaded from secure store or set by user
+        await dspaceClient.ensureAuth()
+        return this.handleStatus()
+      }
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : String(e)
       if (
@@ -38,6 +55,14 @@ export const authCommands = {
         // For other errors from dspaceClient.login or unexpected issues
         throw new Error(`Login failed: ${errorMessage}`)
       }
+    }
+
+    async function setCredentials(): Promise<Credential> {
+      const username = await promptService.prompt('Username:')
+      if (!username) throw new Error('Username cannot be empty.')
+      const password = await promptService.prompt('Password:', true)
+      if (!password) throw new Error('Password cannot be empty.')
+      return { username, password }
     }
   },
 
