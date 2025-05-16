@@ -2,19 +2,19 @@ import { strict as assert } from 'assert'
 import sinon from 'sinon'
 import { dspaceClient } from './dspace-client.service'
 import { storageService } from './storage.service'
-import { authCommands } from '../commands/auth'
+// import { authCommands } from '../commands/auth'
 
 describe('CLI: DSpace Client Service', () => {
   let configStub: sinon.SinonStub
   let authGetStub: sinon.SinonStub
-  let initStub: sinon.SinonStub
-  let loginStub: sinon.SinonStub
+  // let initStub: sinon.SinonStub
+  // let loginStub: sinon.SinonStub
 
   beforeEach(() => {
     configStub = sinon.stub(storageService.config, 'load')
     authGetStub = sinon.stub(storageService.auth, 'get')
-    initStub = sinon.stub(dspaceClient, 'init')
-    loginStub = sinon.stub(dspaceClient, 'login')
+    // initStub = sinon.stub(dspaceClient, 'init')
+    // loginStub = sinon.stub(dspaceClient, 'login')
   })
 
   afterEach(() => {
@@ -29,7 +29,7 @@ describe('CLI: DSpace Client Service', () => {
   it('should throw error if api_url is not verified', async () => {
     configStub.returns({ api_url: 'http://test', verified: false }) // URL not verified
 
-    await assert.rejects(() => dspaceClient.initClient(), {
+    await assert.rejects(() => dspaceClient.ensureInit(), {
       name: 'Error',
       message: `Verify the DSpace REST API URL first with 'config:verify'`
     })

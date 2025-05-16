@@ -11,7 +11,7 @@ export const authCommands = {
     if (!password) throw new Error('Password cannot be empty.')
 
     try {
-      await dspaceClient.initClient()
+      await dspaceClient.ensureInit()
       await dspaceClient.login(username, password)
 
       const authToken = dspaceClient.getAuthorization()
@@ -97,7 +97,7 @@ export const authCommands = {
         return
       }
       console.log('Logging out from DSpace...')
-      await dspaceClient.initClient()
+      await dspaceClient.ensureInit()
       await dspaceClient.logout()
       await storageService.auth.delete('authToken')
       console.log('✅ Logout successful! Credentials cleared from memory.')
@@ -108,7 +108,7 @@ export const authCommands = {
   },
 
   async handleStatus(): Promise<void> {
-    await dspaceClient.initClient()
+    await dspaceClient.ensureInit()
 
     try {
       let authToken = await storageService.auth.get<string>('authToken')

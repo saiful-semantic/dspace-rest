@@ -220,7 +220,7 @@ export const dspaceClient = {
     }
   },
 
-  async initClient(): Promise<void> {
+  async ensureInit(): Promise<void> {
     const config = await storageService.config.load()
     if (!config.api_url) {
       throw new Error('Set the URL first with config:set <REST_API_URL>')
@@ -234,7 +234,7 @@ export const dspaceClient = {
   },
 
   async ensureAuth(): Promise<void> {
-    await this.initClient()
+    await this.ensureInit()
 
     let authToken = await storageService.auth.get<string>('authToken')
     if (authToken) {

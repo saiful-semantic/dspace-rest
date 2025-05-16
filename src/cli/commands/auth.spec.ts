@@ -17,7 +17,7 @@ describe('CLI: Auth Commands Tests', () => {
 
     beforeEach(() => {
       promptStub = sinon.stub(promptService, 'prompt')
-      dspaceInitClientStub = sinon.stub(dspaceClient, 'initClient')
+      dspaceInitClientStub = sinon.stub(dspaceClient, 'ensureInit')
       dspaceLoginStub = sinon.stub(dspaceClient, 'login')
       dspaceGetAuthorizationStub = sinon.stub(dspaceClient, 'getAuthorization')
       authSetStub = sinon.stub(storageService.auth, 'set')
@@ -77,12 +77,12 @@ describe('CLI: Auth Commands Tests', () => {
       assert.ok(authSetStub.notCalled)
     })
 
-    it('should throw error if initClient fails', async () => {
+    it('should throw error if ensureInit fails', async () => {
       // Setup prompt responses
       promptStub.onFirstCall().resolves('testuser')
       promptStub.onSecondCall().resolves('testpass')
 
-      // Setup failed initClient
+      // Setup failed ensureInit
       dspaceInitClientStub.rejects(new Error('Set the URL first with config:set <REST_API_URL>'))
 
       await assert.rejects(
@@ -151,7 +151,7 @@ describe('CLI: Auth Commands Tests', () => {
     let consoleErrorStub: sinon.SinonStub
 
     beforeEach(() => {
-      dspaceInitClientStub = sinon.stub(dspaceClient, 'initClient')
+      dspaceInitClientStub = sinon.stub(dspaceClient, 'ensureInit')
       dspaceLogoutStub = sinon.stub(dspaceClient, 'logout')
       authGetStub = sinon.stub(storageService.auth, 'get')
       authDeleteStub = sinon.stub(storageService.auth, 'delete')
@@ -215,7 +215,7 @@ describe('CLI: Auth Commands Tests', () => {
     let consoleErrorStub: sinon.SinonStub
 
     beforeEach(() => {
-      dspaceInitClientStub = sinon.stub(dspaceClient, 'initClient')
+      dspaceInitClientStub = sinon.stub(dspaceClient, 'ensureInit')
       dspaceSetAuthorizationStub = sinon.stub(dspaceClient, 'setAuthorization')
       dspaceStatusStub = sinon.stub(dspaceClient, 'status')
       authGetStub = sinon.stub(storageService.auth, 'get')
