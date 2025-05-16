@@ -1,6 +1,6 @@
 import { Bundle, Bundles } from '../dspace.types'
 import { ENDPOINTS } from '../../constants'
-import { Payload, request } from '../client'
+import { Payload, clientRequest } from '../client'
 
 export const bundlesFunctions = {
   /**
@@ -9,7 +9,7 @@ export const bundlesFunctions = {
    * @returns {Promise<Bundle>} A promise that resolves with the Bundle object.
    */
   byId: (bundleId: string): Promise<Bundle> =>
-    request.get<Bundle>(`${ENDPOINTS.BUNDLES}/${bundleId}`),
+    clientRequest.get<Bundle>(`${ENDPOINTS.BUNDLES}/${bundleId}`),
 
   /**
    * Retrieves a paginated list of Bundles belonging to a specific Item.
@@ -19,7 +19,7 @@ export const bundlesFunctions = {
    * @returns {Promise<Bundles>} A promise that resolves with an object containing the list of Bundles and pagination details.
    */
   byItemId: (itemId: string, size: number = 20, page: number = 0): Promise<Bundles> =>
-    request.get<Bundles>(`${ENDPOINTS.ITEMS}/${itemId}/bundles?size=${size}&page=${page}`),
+    clientRequest.get<Bundles>(`${ENDPOINTS.ITEMS}/${itemId}/bundles?size=${size}&page=${page}`),
 
   /**
    * Creates a new Bundle within a specific Item.
@@ -30,7 +30,7 @@ export const bundlesFunctions = {
   create: (
     itemId: string,
     payload: Payload // Create under an item
-  ): Promise<Bundle> => request.post<Bundle>(`${ENDPOINTS.ITEMS}/${itemId}/bundles`, payload),
+  ): Promise<Bundle> => clientRequest.post<Bundle>(`${ENDPOINTS.ITEMS}/${itemId}/bundles`, payload),
 
   /**
    * Deletes a specific Bundle by its unique identifier.
@@ -38,5 +38,5 @@ export const bundlesFunctions = {
    * @returns {Promise<void>} A promise that resolves when the deletion is successful.
    */
   deleteById: (bundleId: string): Promise<void> =>
-    request.delete<void>(`${ENDPOINTS.BUNDLES}/${bundleId}`)
+    clientRequest.delete<void>(`${ENDPOINTS.BUNDLES}/${bundleId}`)
 }

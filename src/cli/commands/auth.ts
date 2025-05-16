@@ -3,24 +3,27 @@ import { promptService } from '../services/prompt.service'
 import { dspaceClient } from '../services/dspace-client.service'
 import { storageService } from '../services/storage.service'
 
+interface Credential {
+  username: string
+  password: string
+}
+
 export const authCommands = {
   async handleLogin(): Promise<void> {
-    const config = await storageService.config.load()
-    if (!config.api_url) {
-      throw new Error(`Set the DSpace REST API URL first with 'dspace config:set <REST_API_URL>'`)
-    }
-
-    const username = await promptService.prompt('Username:')
-    if (!username) throw new Error('Username cannot be empty.')
-    const password = await promptService.prompt('Password:', true)
-    if (!password) throw new Error('Password cannot be empty.')
-
     try {
-      dspaceClient.init(config.api_url)
-      await dspaceClient.login(username, password)
-
-      await storageService.auth.set('credentials', { username, password }) // This will handle master pass setup/prompting
-      console.log('✅ Login successful! Credentials stored securely.')
+      const loginStatus = await this.verifyLogin(true)
+      if (!loginStatus) {
+        const credentials = await storageService.auth.get<Credential>('credentials')
+        if (!credentials) {
+          console.log('No saved credentials found. Please log in.')
+          const { username, password } = await setCredentials()
+          await storageService.auth.set('credentials', { username, password }) // This will handle master pass setup/prompting
+          console.log('✅ Credentials stored securely.')
+        }
+        // At this point, credentials are either loaded from secure store or set by user
+        await dspaceClient.ensureAuth()
+        return this.handleStatus()
+      }
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : String(e)
       if (
@@ -41,6 +44,14 @@ export const authCommands = {
         // For other errors from dspaceClient.login or unexpected issues
         throw new Error(`Login failed: ${errorMessage}`)
       }
+    }
+
+    async function setCredentials(): Promise<Credential> {
+      const username = await promptService.prompt('Username:')
+      if (!username) throw new Error('Username cannot be empty.')
+      const password = await promptService.prompt('Password:', true)
+      if (!password) throw new Error('Password cannot be empty.')
+      return { username, password }
     }
   },
 
@@ -88,6 +99,69 @@ export const authCommands = {
         console.error(`❌ Failed to reset credentials: ${errorMessage}`)
       } else {
         throw new Error(`Failed to reset credentials: ${errorMessage}`)
+      }
+    }
+  },
+
+  async handleLogout(): Promise<void> {
+    try {
+      let authToken = await storageService.auth.get<string>('authToken')
+      if (!authToken) {
+        console.log('❌ You are not logged in to DSpace.')
+        return
+      }
+      console.log('Logging out from DSpace...')
+      await dspaceClient.ensureInit()
+      await dspaceClient.logout()
+      await storageService.auth.delete('authToken')
+      console.log('✅ Logout successful! Credentials cleared from memory.')
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : String(e)
+      console.error(`❌ Logout failed: ${errorMessage}`)
+    }
+  },
+
+  async handleStatus(): Promise<void> {
+    try {
+      const loginStatus = await this.verifyLogin()
+      if (!loginStatus) {
+        console.log('❌ You are not logged in to DSpace.')
+      }
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : String(e)
+      console.error(`❌ Failed to check login status: ${errorMessage}`)
+    }
+  },
+
+  async verifyLogin(reLogin = false): Promise<boolean> {
+    try {
+      let authToken = await storageService.auth.get<string>('authToken')
+      if (authToken) {
+        await dspaceClient.ensureInit()
+        dspaceClient.setAuthorization(authToken)
+        const authStatus = await dspaceClient.status()
+        if (authStatus.authenticated) {
+          console.log(`✅ You are logged in as: ${authStatus._embedded?.eperson?.email}`)
+          console.log(`  Link: ${authStatus._links?.eperson?.href}`)
+          return true
+        } else {
+          return await tryLogin()
+        }
+      } else {
+        return await tryLogin()
+      }
+    } catch {
+      return false
+    }
+
+    async function tryLogin() {
+      if (reLogin) {
+        await dspaceClient.ensureAuth()
+        return true
+      } else {
+        await storageService.auth.delete('authToken')
+        dspaceClient.clearAuthorization()
+        return false
       }
     }
   }

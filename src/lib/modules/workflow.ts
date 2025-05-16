@@ -1,6 +1,6 @@
 import { ClaimedTasks, PoolTasks, WorkflowItem, WorkflowItems, WorkflowTask } from '../dspace.types'
 import { ENDPOINTS } from '../../constants'
-import { Payload, request } from '../client'
+import { Payload, clientRequest } from '../client'
 
 export const workflowFunctions = {
   /**
@@ -10,7 +10,7 @@ export const workflowFunctions = {
    * @returns {Promise<WorkflowItems>}
    */
   allItems: (size: number = 20, page: number = 0): Promise<WorkflowItems> =>
-    request.get<WorkflowItems>(`${ENDPOINTS.WORKFLOW_ITEMS}?size=${size}&page=${page}`),
+    clientRequest.get<WorkflowItems>(`${ENDPOINTS.WORKFLOW_ITEMS}?size=${size}&page=${page}`),
 
   /**
    * Retrieves a specific workflow item by its ID.
@@ -18,7 +18,7 @@ export const workflowFunctions = {
    * @returns {Promise<WorkflowItem>}
    */
   itemById: (workflowItemId: string): Promise<WorkflowItem> =>
-    request.get<WorkflowItem>(`${ENDPOINTS.WORKFLOW_ITEMS}/${workflowItemId}`),
+    clientRequest.get<WorkflowItem>(`${ENDPOINTS.WORKFLOW_ITEMS}/${workflowItemId}`),
 
   /**
    * Deletes (aborts/rejects) a workflow item.
@@ -26,7 +26,7 @@ export const workflowFunctions = {
    * @returns {Promise<void>}
    */
   deleteItem: (workflowItemId: string): Promise<void> =>
-    request.delete<void>(`${ENDPOINTS.WORKFLOW_ITEMS}/${workflowItemId}`),
+    clientRequest.delete<void>(`${ENDPOINTS.WORKFLOW_ITEMS}/${workflowItemId}`),
 
   /**
    * Sends a claimed task back to the pool or advances/rejects a workflow item.
@@ -37,7 +37,7 @@ export const workflowFunctions = {
    * @returns {Promise<any>}
    */
   performActionOnItem: (workflowItemIdOrTaskId: string, actionPayload: Payload): Promise<any> =>
-    request.post<any>(`${ENDPOINTS.WORKFLOW_ITEMS}/${workflowItemIdOrTaskId}`, actionPayload), // Or a specific sub-path like /tasks
+    clientRequest.post<any>(`${ENDPOINTS.WORKFLOW_ITEMS}/${workflowItemIdOrTaskId}`, actionPayload), // Or a specific sub-path like /tasks
 
   // --- Pool Tasks ---
   /**
@@ -47,7 +47,7 @@ export const workflowFunctions = {
    * @returns {Promise<PoolTasks>}
    */
   poolTasks: (size: number = 20, page: number = 0): Promise<PoolTasks> =>
-    request.get<PoolTasks>(`${ENDPOINTS.POOL_TASKS}?size=${size}&page=${page}`),
+    clientRequest.get<PoolTasks>(`${ENDPOINTS.POOL_TASKS}?size=${size}&page=${page}`),
 
   /**
    * Retrieves a specific pool task by its ID.
@@ -55,7 +55,7 @@ export const workflowFunctions = {
    * @returns {Promise<WorkflowTask>}
    */
   poolTaskById: (taskId: string): Promise<WorkflowTask> =>
-    request.get<WorkflowTask>(`${ENDPOINTS.POOL_TASKS}/${taskId}`), // Or just /tasks/{id}
+    clientRequest.get<WorkflowTask>(`${ENDPOINTS.POOL_TASKS}/${taskId}`), // Or just /tasks/{id}
 
   // --- Claimed Tasks ---
   /**
@@ -65,7 +65,7 @@ export const workflowFunctions = {
    * @returns {Promise<ClaimedTasks>}
    */
   claimedTasks: (size: number = 20, page: number = 0): Promise<ClaimedTasks> =>
-    request.get<ClaimedTasks>(`${ENDPOINTS.CLAIMED_TASKS}?size=${size}&page=${page}`),
+    clientRequest.get<ClaimedTasks>(`${ENDPOINTS.CLAIMED_TASKS}?size=${size}&page=${page}`),
 
   /**
    * Retrieves a specific claimed task by its ID.
@@ -73,7 +73,7 @@ export const workflowFunctions = {
    * @returns {Promise<WorkflowTask>}
    */
   claimedTaskById: (taskId: string): Promise<WorkflowTask> =>
-    request.get<WorkflowTask>(`${ENDPOINTS.CLAIMED_TASKS}/${taskId}`), // Or just /tasks/{id}
+    clientRequest.get<WorkflowTask>(`${ENDPOINTS.CLAIMED_TASKS}/${taskId}`), // Or just /tasks/{id}
 
   /**
    * Claims a task from the pool.
@@ -83,10 +83,10 @@ export const workflowFunctions = {
    * @returns {Promise<WorkflowTask>} The claimed task.
    */
   claimTask: (poolTaskId: string): Promise<WorkflowTask> =>
-    request.post<WorkflowTask>(`${ENDPOINTS.CLAIMED_TASKS}?poolTask=${poolTaskId}`, {}),
-  // Alternative: request.post(`${ENDPOINTS.POOL_TASKS}/${poolTaskId}/claim`, {})
+    clientRequest.post<WorkflowTask>(`${ENDPOINTS.CLAIMED_TASKS}?poolTask=${poolTaskId}`, {}),
+  // Alternative: clientRequest.post(`${ENDPOINTS.POOL_TASKS}/${poolTaskId}/claim`, {})
   // Or, if the API expects the task URI in the body:
-  // request.post(ENDPOINTS.CLAIMED_TASKS, {uri: `${internalBaseUrl}${ENDPOINTS.POOL_TASKS}/${poolTaskId}` })
+  // clientRequest.post(ENDPOINTS.CLAIMED_TASKS, {uri: `${internalBaseUrl}${ENDPOINTS.POOL_TASKS}/${poolTaskId}` })
 
   /**
    * Returns a claimed task to the pool (unclaims it).
@@ -95,7 +95,7 @@ export const workflowFunctions = {
    * @returns {Promise<void>}
    */
   unclaimTask: (claimedTaskId: string): Promise<void> =>
-    request.delete<void>(`${ENDPOINTS.CLAIMED_TASKS}/${claimedTaskId}`), // Or a POST with an action
+    clientRequest.delete<void>(`${ENDPOINTS.CLAIMED_TASKS}/${claimedTaskId}`), // Or a POST with an action
 
   /**
    * Submits/completes a claimed task (e.g., approve, reject, edit).
@@ -106,6 +106,6 @@ export const workflowFunctions = {
    * @returns {Promise<any>} Response might vary.
    */
   submitTask: (claimedTaskId: string, submissionPayload: Payload): Promise<any> =>
-    request.post<any>(`${ENDPOINTS.CLAIMED_TASKS}/${claimedTaskId}`, submissionPayload)
+    clientRequest.post<any>(`${ENDPOINTS.CLAIMED_TASKS}/${claimedTaskId}`, submissionPayload)
   // DSpace 7 example: POST /claimedtasks/{TASK_ID}?submit_approve=true (or other submit_... buttons)
 }

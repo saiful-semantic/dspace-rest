@@ -1,6 +1,15 @@
 import qs from 'node:querystring'
-import { apiClient, DSpaceApiError } from '../client'
+import {
+  apiClient,
+  clearAuthorization,
+  clientRequest,
+  DSpaceApiError,
+  getBaseVersion,
+  setAuthorization
+} from '../client'
 import { ENDPOINTS } from '../../constants'
+import { coreFunctions } from './core'
+import { AuthStatus } from '../dspace.types'
 
 export const authFunctions = {
   /**
@@ -35,25 +44,31 @@ export const authFunctions = {
       })
 
       if (loginRes.headers.authorization) {
-        apiClient.defaults.headers.common['Authorization'] = loginRes.headers
-          .authorization as string
+        const authToken = loginRes.headers.authorization as string
+        setAuthorization(authToken, csrfToken)
+        return true
+      } else {
+        // If login is successful (e.g. 200 OK) but no authorization header, it's an issue.
+        throw new DSpaceApiError(
+          `Login successful but no authorization token received for ${versionLabel}.`,
+          500, // Or an appropriate status code indicating an unexpected server response
+          loginRes
+        )
       }
-      if (csrfToken) {
-        apiClient.defaults.headers.common['X-XSRF-Token'] = csrfToken
-      }
-      return true
     }
 
     try {
-      return await tryLoginStrategy(ENDPOINTS.CSRF_DSPACE8, 'DSpace 8+')
-    } catch {
-      delete apiClient.defaults.headers.common['Authorization']
-      delete apiClient.defaults.headers.common['X-XSRF-Token']
-      try {
+      // Check the base version of DSpace
+      const baseVersion = getBaseVersion() || (await coreFunctions.extractBaseVersion())
+      if (baseVersion < 8) {
         return await tryLoginStrategy(ENDPOINTS.CSRF_DSPACE7, 'DSpace 7')
-      } catch {
-        return false
+      } else {
+        return await tryLoginStrategy(ENDPOINTS.CSRF_DSPACE8, 'DSpace 8+')
       }
+    } catch (error: unknown) {
+      clearAuthorization()
+      const errorMessage = (error as Error).message || 'Unknown error during login'
+      return Promise.reject(new DSpaceApiError(errorMessage, 401, error))
     }
   },
 
@@ -67,23 +82,15 @@ export const authFunctions = {
     } catch {
       // console.error('Logout request failed, but clearing auth headers anyway.')
     } finally {
-      delete apiClient.defaults.headers.common['Authorization']
-      delete apiClient.defaults.headers.common['X-XSRF-Token']
+      clearAuthorization()
     }
   },
 
   /**
    * Checks the current authentication status.
-   * @returns {Promise<any>} The status response.
+   * @returns {Promise<AuthStatus>} The status response.
    */
-  status: async (): Promise<unknown> => {
-    const response = await apiClient.get(ENDPOINTS.STATUS)
-    const csrfToken =
-      (response.headers['dspace-xsrf-token'] as string | undefined) ||
-      (response.headers['xsrf-token'] as string | undefined)
-    if (csrfToken && apiClient?.defaults?.headers?.common) {
-      apiClient.defaults.headers.common['X-XSRF-Token'] = csrfToken
-    }
-    return response.data
+  status: async (): Promise<AuthStatus> => {
+    return await clientRequest.get<AuthStatus>(ENDPOINTS.STATUS)
   }
 }

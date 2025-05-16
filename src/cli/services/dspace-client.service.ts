@@ -7,6 +7,10 @@ export const dspaceClient = {
   info: dspaceApi.core.info,
   login: dspaceApi.auth.login,
   logout: dspaceApi.auth.logout,
+  status: dspaceApi.auth.status,
+  setAuthorization: dspaceApi.setAuthorization,
+  getAuthorization: dspaceApi.getAuthorization,
+  clearAuthorization: dspaceApi.clearAuthorization,
 
   async showAllItems(): Promise<void> {
     try {
@@ -216,13 +220,33 @@ export const dspaceClient = {
     }
   },
 
-  async ensureAuth(): Promise<void> {
+  async ensureInit(): Promise<void> {
     const config = await storageService.config.load()
     if (!config.api_url) {
       throw new Error('Set the URL first with config:set <REST_API_URL>')
     }
 
+    if (!config.verified) {
+      throw new Error(`Verify the DSpace REST API URL first with 'config:verify'`)
+    }
+
     this.init(config.api_url)
+  },
+
+  async ensureAuth(): Promise<void> {
+    await this.ensureInit()
+
+    let authToken = await storageService.auth.get<string>('authToken')
+    if (authToken) {
+      this.setAuthorization(authToken)
+      const authStatus = await dspaceClient.status()
+      if (authStatus.authenticated) {
+        return
+      } else {
+        await storageService.auth.delete('authToken')
+        this.clearAuthorization()
+      }
+    }
 
     const credentials = await storageService.auth.get<{ username: string; password: string }>(
       'credentials'
@@ -231,5 +255,10 @@ export const dspaceClient = {
       throw new Error('No saved credentials. Run "dspace-cli login" first.')
     }
     await this.login(String(credentials.username), String(credentials.password))
+    authToken = this.getAuthorization()
+    if (!authToken) {
+      throw new Error('No authorization token found. Login failed.')
+    }
+    await storageService.auth.set('authToken', authToken)
   }
 }
