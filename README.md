@@ -6,7 +6,7 @@
 
 NodeJs client for DSpace 7+ [REST API](https://github.com/DSpace/RestContract)
 
-**Note: This is a successor of [dspace7-node](https://github.com/semanticlib/dspace7-node)**
+**Note: This is the successor of [dspace7-node](https://github.com/semanticlib/dspace7-node)**
 
 ## Requirements
 
@@ -19,7 +19,87 @@ NodeJs client for DSpace 7+ [REST API](https://github.com/DSpace/RestContract)
 npm install dspace-rest
 ```
 
-## Example Usage
+## CLI Usage
+
+The package provides a command-line interface (CLI) for interacting with DSpace servers directly from your terminal.
+
+### CLI Setup
+
+The CLI is available as `dspace-cli`. You can run it in a few ways:
+
+1. **Using `npx` without prior installation (recommended for quick use or one-off commands):**
+   This command will temporarily download the `dspace-rest` package (if not already cached) and then execute
+   `dspace-cli`.
+   ```bash
+   npx -p dspace-rest dspace-cli --help
+   ```
+
+2. **If `dspace-rest` is a dependency in your project:**
+   After running `npm install dspace-rest` or `yarn add dspace-rest` in your project:
+   ```bash
+   npx dspace-cli --help
+   ```
+
+3. **If `dspace-rest` is installed globally:**
+   After running `npm install -g dspace-rest`:
+   ```bash
+   dspace-cli --help
+   ```
+
+### Configuration
+
+Before using most commands, set your DSpace server URL and login credentials:
+
+```bash
+dspace-cli -h
+dspace-cli config:set https://demo.dspace.org/server
+dspace-cli config:verify
+dspace-cli config:show
+dspace-cli login
+dspace-cli login:status
+```
+
+### Common Commands
+
+- Reset configuration:
+  ```bash
+  dspace-cli config:reset
+  dspace-cli login:reset
+  ```
+- List all items:
+  ```bash
+  dspace-cli items:list
+  ```
+- Show item details:
+  ```bash
+  dspace-cli items:show <itemId>
+  ```
+- Update item metadata:
+  ```bash
+  dspace-cli items:update <itemId> '[{"op":"add","path":"/metadata/dc.title","value":[{"value":"New Title"}]}]'
+  ```
+- List all collections:
+  ```bash
+  dspace-cli collections:list
+  ```
+- Add a bitstream to an item:
+  ```bash
+  dspace-cli bitstreams:add <itemId> <filename> <filePath>
+  ```
+- Delete a bitstream:
+  ```bash
+  dspace-cli bitstreams:delete <bitstreamId>
+  ```
+- Move an item to another collection:
+  ```bash
+  dspace-cli items:move <itemId> <collectionId>
+  ```
+
+### More
+
+Run `dspace-cli --help` or any subcommand with `--help` for a full list of available commands and options.
+
+## Direct Lib Usage
 
 See the [examples directory](https://github.com/semanticlib/dspace-rest/tree/main/examples) for practical usage examples
 of this library.
@@ -102,84 +182,6 @@ Available types include:
 - `Types.DspaceEntity`
 - `Types.ListResponse`
 
-## CLI Usage
-
-The package provides a command-line interface (CLI) for interacting with DSpace servers directly from your terminal.
-
-### CLI Setup
-
-The CLI is available as `dspace-cli`. You can run it in a few ways:
-
-1. **Using `npx` without prior installation (recommended for quick use or one-off commands):**
-   This command will temporarily download the `dspace-rest` package (if not already cached) and then execute
-   `dspace-cli`.
-   ```bash
-   npx -p dspace-rest dspace-cli --help
-   ```
-
-2. **If `dspace-rest` is a dependency in your project:**
-   After running `npm install dspace-rest` or `yarn add dspace-rest` in your project:
-   ```bash
-   npx dspace-cli --help
-   ```
-
-3. **If `dspace-rest` is installed globally:**
-   After running `npm install -g dspace-rest`:
-   ```bash
-   dspace-cli --help
-   ```
-
-### Configuration
-
-Before using most commands, set your DSpace server URL and login credentials:
-
-```bash
-dspace-cli config:set https://demo.dspace.org/server
-dspace-cli config:verify
-dspace-cli config:show
-dspace-cli login
-```
-
-### Common Commands
-
-- Reset configuration:
-  ```bash
-  dspace-cli config:reset
-  dspace-cli login:reset
-  ```
-- List all items:
-  ```bash
-  dspace-cli items:list
-  ```
-- Show item details:
-  ```bash
-  dspace-cli items:show <itemId>
-  ```
-- Update item metadata:
-  ```bash
-  dspace-cli items:update <itemId> '[{"op":"add","path":"/metadata/dc.title","value":[{"value":"New Title"}]}]'
-  ```
-- List all collections:
-  ```bash
-  dspace-cli collections:list
-  ```
-- Add a bitstream to an item:
-  ```bash
-  dspace-cli bitstreams:add <itemId> <filename> <filePath>
-  ```
-- Delete a bitstream:
-  ```bash
-  dspace-cli bitstreams:delete <bitstreamId>
-  ```
-- Move an item to another collection:
-  ```bash
-  dspace-cli items:move <itemId> <collectionId>
-  ```
-
-### More
-
-Run `dspace-cli --help` or any subcommand with `--help` for a full list of available commands and options.
-
 ## Features
 
 - Authentication and session management
@@ -199,8 +201,3 @@ Run `dspace-cli --help` or any subcommand with `--help` for a full list of avail
   - Delete single or multiple bitstreams
   - Delete all bitstreams from an item
   - Support for ORIGINAL and LICENSE bundles
-
-## Motivation and Use Cases
-
-The motivation and example use cases are described here:
-[Batch operations using DSpace 7 REST API](https://www.semanticconsulting.com/blog/batch-operations-using-dspace-7-rest-api)
